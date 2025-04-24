@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	app := ui.MakeApp("sk")
+	app := ui.MakeApp("en")
 	app.Autoreload()
 
 	buttonId := ui.Target()

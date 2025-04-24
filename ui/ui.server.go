@@ -353,65 +353,6 @@ func (ctx *Context) Post(as ActionType, swap Swap, action *Action) string {
 	return Normalize(fmt.Sprintf(`__post(event, "%s", "%s", "%s", %s) `, swap, action.Target.Id, path, values))
 }
 
-// type Listeners struct {
-// 	Load    func(href string) Attr
-// 	Replace func(target Attr) Attr
-// 	Render  func(target Attr) Attr
-// }
-
-// func (ctx *Context) OnClick() Listeners {
-// 	return Listeners{
-// 		Load: func(href string) Attr {
-// 			return Attr{OnClick: ctx.Load(href)}
-// 		},
-// 	}
-// }
-
-// func (ctx *Context) OnSubmit2(method ComponentMethod, values ...any) Listeners {
-// 	return Listeners{
-// 		Replace: func(target Attr) Attr {
-// 			// target.Swap = "outline"
-// 			// return Attr{OnSubmit: ctx.Post(Action{Method: method, Target: target, Values: values, Type: FORM})}
-
-// 			return Attr{OnSubmit: ctx.Submit(method, values...).Replace(target)}
-// 		},
-// 		Render: func(target Attr) Attr {
-// 			// target.Swap = "inline"
-// 			// return Attr{OnSubmit: ctx.Post(Action{Method: method, Target: target, Values: values, Type: FORM})}
-
-// 			return Attr{OnSubmit: ctx.Submit(method, values...).Render(target)}
-// 		},
-// 	}
-// }
-
-// func (ctx *Context) OnSubmit(action string) Attr {
-// 	return Attr{OnSubmit: action}
-// }
-
-// func (ctx *Context) Click(action Action) Attr {
-// 	if action.Target.Id == "" {
-// 		action.Target = Target()
-// 	}
-// 	return Attr{OnClick: ctx.Post(action)}
-// }
-
-// func (ctx *Context) Change(action Action) Attr {
-// 	if action.Target.Id == "" {
-// 		action.Target = Target()
-// 	}
-// 	return Attr{OnChange: ctx.Post(action)}
-// }
-
-// func (ctx *Context) Submit(action Action) Attr {
-// 	action.Type = FORM
-//
-// 	if action.Target.Id == "" {
-// 		action.Target = Target()
-// 	}
-//
-// 	return Attr{OnSubmit: ctx.Post(action)}
-// }
-
 type Actions struct {
 	Render   func(target Attr) string
 	Replace  func(target Attr) string
