@@ -40,7 +40,7 @@ func main() {
 		return app.Html("Test", "p-8",
 			ui.Div("flex flex-row gap-4")(
 				ui.Div("flex justify-start gap-4 items-center")(
-					ui.Div("")("Hello"),
+					"Hello",
 					button(ctx),
 				),
 
