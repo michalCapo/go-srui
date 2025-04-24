@@ -752,6 +752,16 @@ func (app *App) Action(uid string, action Method) **Method {
 
 func (app *App) Callable(action Method) **Method {
 	uid := runtime.FuncForPC(reflect.ValueOf(action).Pointer()).Name()
+	uid = strings.ToLower(uid)
+	uid = strings.ReplaceAll(uid, ".", "_")
+	uid = strings.ReplaceAll(uid, "-", "_")
+	uid = strings.ReplaceAll(uid, "/", "_")
+	uid = strings.ReplaceAll(uid, ":", "_")
+	uid = strings.ReplaceAll(uid, "*", "")
+	uid = strings.ReplaceAll(uid, "(", "")
+	uid = strings.ReplaceAll(uid, ")", "")
+
+	// uid = fmt.Sprintf("%x", md5.Sum([]byte(uid)))
 
 	found, ok := pool[uid]
 	if ok {
@@ -764,29 +774,6 @@ func (app *App) Callable(action Method) **Method {
 
 	return &found
 }
-
-// var pool2 = make(map[string]Method)
-// func (app *App) Callable(action Method) **Method {
-// 	methodValue := reflect.ValueOf(action)
-// 	funcName := runtime.FuncForPC(reflect.ValueOf(action).Pointer()).Name()
-// 	fmt.Println(funcName)
-// 	fmt.Println(methodValue.Type().PkgPath(), methodValue.Type().Name())
-// 	methodPtr := methodValue.Pointer()
-// 	methodHash := fmt.Sprintf("%x", methodPtr)
-// 	// Check if we already have this method registered
-// 	for _, value := range pool2 {
-// 		valuePtr := reflect.ValueOf(value).Pointer()
-// 		if fmt.Sprintf("%x", valuePtr) == methodHash {
-// 			found := &value
-// 			return &found
-// 		}
-// 	}
-// 	uid := strings.ToLower(RandomString(30))
-// 	found := &action
-// 	app.Register("POST", uid, found)
-// 	pool2[uid] = action
-// 	return &found
-// }
 
 func (app *App) Assets(assets embed.FS, path string, maxAge time.Duration) {
 	path = strings.TrimPrefix(path, "/")
