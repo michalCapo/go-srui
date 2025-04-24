@@ -228,6 +228,16 @@ func (ctx *Context) Body(output any) error {
 
 				val = reflect.ValueOf(uint(n))
 
+			case "int":
+				cleanedValue := strings.ReplaceAll(item.Value, "_", "")
+				n, err := strconv.ParseInt(cleanedValue, 10, 64)
+				if err != nil {
+					fmt.Println("Error parsing number", err)
+					continue
+				}
+
+				val = reflect.ValueOf(int(n))
+
 			case "number":
 				cleanedValue := strings.ReplaceAll(item.Value, "_", "")
 				n, err := strconv.Atoi(cleanedValue)
