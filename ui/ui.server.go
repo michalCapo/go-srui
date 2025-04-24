@@ -188,7 +188,6 @@ func (ctx *Context) Body(output any) error {
 					fmt.Println("Error parsing date", err)
 					continue
 				}
-
 				if structFieldValue.Type() == reflect.TypeOf(gorm.DeletedAt{}) {
 					val = reflect.ValueOf(gorm.DeletedAt{Time: t, Valid: true})
 				} else {
@@ -207,7 +206,6 @@ func (ctx *Context) Body(output any) error {
 					fmt.Println("Error parsing time", err)
 					continue
 				}
-
 				val = reflect.ValueOf(t)
 
 			case "Time":
@@ -215,7 +213,6 @@ func (ctx *Context) Body(output any) error {
 				if err != nil {
 					fmt.Println("Error parsing time", err)
 				}
-
 				val = reflect.ValueOf(t)
 
 			case "uint":
@@ -225,7 +222,6 @@ func (ctx *Context) Body(output any) error {
 					fmt.Println("Error parsing number", err)
 					continue
 				}
-
 				val = reflect.ValueOf(uint(n))
 
 			case "int":
@@ -235,8 +231,16 @@ func (ctx *Context) Body(output any) error {
 					fmt.Println("Error parsing number", err)
 					continue
 				}
-
 				val = reflect.ValueOf(int(n))
+
+			case "int64":
+				cleanedValue := strings.ReplaceAll(item.Value, "_", "")
+				n, err := strconv.ParseInt(cleanedValue, 10, 64)
+				if err != nil {
+					fmt.Println("Error parsing number", err)
+					continue
+				}
+				val = reflect.ValueOf(int64(n))
 
 			case "number":
 				cleanedValue := strings.ReplaceAll(item.Value, "_", "")
@@ -245,7 +249,6 @@ func (ctx *Context) Body(output any) error {
 					fmt.Println("Error parsing number", err)
 					continue
 				}
-
 				val = reflect.ValueOf(n)
 
 			case "float64":
@@ -255,7 +258,6 @@ func (ctx *Context) Body(output any) error {
 					fmt.Println("Error parsing float64", err)
 					continue
 				}
-
 				val = reflect.ValueOf(f)
 
 			case "datetime-local":
@@ -264,7 +266,6 @@ func (ctx *Context) Body(output any) error {
 					fmt.Println("Error parsing datetime-local", err)
 					continue
 				}
-
 				val = reflect.ValueOf(t)
 
 			// case "text":
