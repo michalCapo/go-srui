@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"net/http"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -30,8 +31,10 @@ type Method = func(*Context) string
 // }
 
 var (
-	stored = make(map[*Method]string)
-	mu     sync.Mutex
+	stored         = make(map[*Method]string)
+	mu             sync.Mutex
+	reReplaceChars = regexp.MustCompile(`[./:-]`)
+	reRemoveChars  = regexp.MustCompile(`[*()\[\]]`)
 )
 
 type BodyItem struct {
@@ -695,15 +698,8 @@ func (app *App) Action(uid string, action Method) **Method {
 func (app *App) Callable(action Method) **Method {
 	uid := runtime.FuncForPC(reflect.ValueOf(action).Pointer()).Name()
 	uid = strings.ToLower(uid)
-	uid = strings.ReplaceAll(uid, ".", "_")
-	uid = strings.ReplaceAll(uid, "-", "_")
-	uid = strings.ReplaceAll(uid, "/", "_")
-	uid = strings.ReplaceAll(uid, ":", "_")
-	uid = strings.ReplaceAll(uid, "*", "")
-	uid = strings.ReplaceAll(uid, "(", "")
-	uid = strings.ReplaceAll(uid, ")", "")
-
-	// uid = fmt.Sprintf("%x", md5.Sum([]byte(uid)))
+	uid = reRemoveChars.ReplaceAllString(uid, "")
+	uid = reReplaceChars.ReplaceAllString(uid, "-")
 
 	found, ok := pool[uid]
 	if ok {
