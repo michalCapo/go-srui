@@ -1,0 +1,8 @@
+.idea
+.vscode
+docs/.~*
+
+tmp/
+__debug*
+
+premium.db
