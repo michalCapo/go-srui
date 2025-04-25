@@ -548,7 +548,7 @@ func (app *App) Register(httpMethod string, path string, method *Method) string 
 	stored[method] = path
 	mu.Unlock()
 
-	fmt.Println("Registering: ", httpMethod, path, " -> ", funcName)
+	// fmt.Println("Registering: ", httpMethod, path, " -> ", funcName)
 
 	return path
 }
@@ -666,6 +666,11 @@ func (app *App) Listen(port string) {
 		}
 
 		value := r.URL.Path
+
+		if strings.Contains(strings.Join(r.Header["Upgrade"], " "), "websocket") {
+			fmt.Println("a web socket")
+			return
+		}
 
 		for found, path := range stored {
 			if value == path {
