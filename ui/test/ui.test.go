@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"dasolutions.sk/test/ui"
+	"dasolutions.sk/goui/ui"
 )
 
 func TestContext(body []ui.BodyItem) *ui.Context {

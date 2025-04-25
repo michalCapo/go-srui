@@ -1,4 +1,4 @@
-module dasolutions.sk/test
+module dasolutions.sk/goui
 
 go 1.23
 
