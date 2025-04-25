@@ -26,12 +26,11 @@ import (
 type Method = func(*Context) string
 
 var (
-	// pool           = make(map[string]*Method)
-	stored         = make(map[*Method]string)
+	call_path      = "/call"
 	mu             sync.Mutex
+	stored         = make(map[*Method]string)
 	reReplaceChars = regexp.MustCompile(`[./:-]`)
 	reRemoveChars  = regexp.MustCompile(`[*()\[\]]`)
-	call_path      = "/call"
 )
 
 type BodyItem struct {
@@ -131,22 +130,6 @@ func (ctx *Context) Session(db *gorm.DB, name string) *TSession {
 	}
 }
 
-// func (ctx *Context) SessionSave(db *gorm.DB, name string, output any) {
-// 	data, err := json.Marshal(output)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return
-// 	}
-
-// 	session := &TSession{
-// 		SessionId: ctx.SessionId,
-// 		Name:      name,
-// 		Data:      data,
-// 	}
-
-// 	db.Where("session_id = ? and name = ?", session.SessionId, session.Name).Save(session)
-// }
-
 func (ctx *Context) Body(output any) error {
 	body, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
@@ -161,17 +144,12 @@ func (ctx *Context) Body(output any) error {
 		}
 	}
 
-	// structValue := reflect.ValueOf(output).Elem()
-
 	for _, item := range data {
 		structFieldValue, err := PathValue(output, item.Name)
-		// structFieldValue := structValue.FieldByName(item.Name)
 		if err != nil {
 			fmt.Println("Error getting field", item.Name, err)
 			continue
 		}
-
-		// if !structFieldValue.IsValid() { continue }
 
 		if !structFieldValue.CanSet() {
 			continue
@@ -309,9 +287,8 @@ func (ctx *Context) Post(as ActionType, swap Swap, action *Action) string {
 	path, ok := stored[action.Method]
 
 	if !ok {
-		a := reflect.ValueOf(*action.Method).String()
-		// funcName := runtime.FuncForPC(reflect.ValueOf(action.Method).Pointer()).Name()
-		panic(fmt.Sprintf("Function '%s' probably not registered. Cannot make call to this function.", a))
+		func_name := reflect.ValueOf(*action.Method).String()
+		panic(fmt.Sprintf("Function '%s' probably not registered. Cannot make call to this function.", func_name))
 	}
 
 	var body []BodyItem
@@ -367,31 +344,6 @@ type Submits struct {
 	Replace func(target Attr) Attr
 }
 
-// func (ctx *Context) ClickTo(method ComponentMethod, values ...any) AttrActions {
-// 	return AttrActions{
-// 		Replace: func(target Attr) Attr {
-// 			target.Swap = "outline"
-// 			return Attr{OnClick: ctx.Post(Action{Method: method, Target: target, Values: values})}
-// 		},
-// 		Render: func(target Attr) Attr {
-// 			target.Swap = "inline"
-// 			return Attr{OnClick: ctx.Post(Action{Method: method, Target: target, Values: values})}
-// 		},
-// 	}
-// }
-// func (ctx *Context) ChangeTo(method ComponentMethod, values ...any) AttrActions {
-// 	return AttrActions{
-// 		Replace: func(target Attr) Attr {
-// 			target.Swap = "outline"
-// 			return Attr{OnChange: ctx.Post(Action{Method: method, Target: target, Values: values})}
-// 		},
-// 		Render: func(target Attr) Attr {
-// 			target.Swap = "inline"
-// 			return Attr{OnChange: ctx.Post(Action{Method: method, Target: target, Values: values})}
-// 		},
-// 	}
-// }
-
 func swapize(swap ...Swap) Swap {
 	if len(swap) > 0 {
 		return swap[0]
@@ -413,10 +365,6 @@ func (ctx *Context) Submit(method **Method, values ...any) Submits {
 
 func (ctx *Context) Send(method **Method, values ...any) Actions {
 	return Actions{
-		// Replace: func(target Attr) string {
-		// 	target.Swap = "outline"
-		// 	return ctx.Post(Action{Type: FORM, Method: method, Target: target, Values: values})
-		// },
 		Render: func(target Attr) string {
 			return ctx.Post(FORM, INLINE, &Action{Method: *method, Target: target, Values: values})
 		},
@@ -437,13 +385,6 @@ func (ctx *Context) Send(method **Method, values ...any) Actions {
 
 func (ctx *Context) Call(method **Method, values ...any) Actions {
 	return Actions{
-		// Body: func() (*Context, string) {
-		// 	return ctx, ctx.Post&Action{Method: method, Values: values})
-		// },
-		// Replace: func(target Attr) string {
-		// 	target.Swap = "outline"
-		// 	return ctx.Post&Action{Method: method, Target: target, Values: values})
-		// },
 		Render: func(target Attr) string {
 			return ctx.Post(POST, INLINE, &Action{Method: *method, Target: target, Values: values})
 		},
@@ -551,8 +492,6 @@ func (ctx *Context) Translate(message string, val ...any) string {
 	return fmt.Sprintf(message, val...)
 }
 
-// type Component Method
-
 func RandomString(n ...int) string {
 	if len(n) == 0 {
 		return RandomString(20)
@@ -583,13 +522,6 @@ type App struct {
 	HtmlHead []string
 }
 
-// func (app *App) Path(method Method) string {
-// 	funcName := runtime.FuncForPC(reflect.ValueOf(method).Pointer()).Name()
-// 	md5 := md5.Sum([]byte(funcName))
-// 	path := hex.EncodeToString(md5[:])
-// 	return "/" + strings.ToLower(path)
-// }
-
 func (app *App) Register(httpMethod string, path string, method *Method) string {
 	if path == "" || method == nil {
 		panic("Path and Method cannot be empty")
@@ -605,10 +537,6 @@ func (app *App) Register(httpMethod string, path string, method *Method) string 
 	if ok {
 		panic(fmt.Sprintf("Path %s is already registered", funcName))
 	}
-
-	// if !strings.HasPrefix(path, "/") {
-	// 	path = "/" + path
-	// }
 
 	for _, value := range stored {
 		if value == path {
@@ -824,47 +752,6 @@ func (app *App) Listen(port string) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 	})
 
-	// http.Handle("/call", websocket.Handler(func(ws *websocket.Conn) {
-	// 	defer ws.Close()
-
-	// 	r := ws.Request()
-	// 	w := ws.Request().Response
-
-	// 	var message string
-	// 	websocket.Message.Receive(ws, &message)
-
-	// 	var sessionId string
-	// 	cookie, err := r.Cookie("session_id")
-	// 	if err != nil {
-	// 		sessionId = RandomString(30)
-	// 		http.SetCookie(w, &http.Cookie{
-	// 			Name:     "session_id",
-	// 			Value:    sessionId,
-	// 			Path:     "/",
-	// 			HttpOnly: true,
-	// 			Secure:   true,
-	// 			SameSite: http.SameSiteStrictMode,
-	// 		})
-	// 	} else {
-	// 		sessionId = cookie.Value
-	// 	}
-
-	// 	ctx := &Context{
-	// 		App:       app,
-	// 		Request:   r,
-	// 		SessionId: sessionId,
-	// 		append:    []string{},
-	// 	}
-
-	// 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// 	w.Write([]byte((*method)(ctx)))
-
-	// 	if len(ctx.append) > 0 {
-	// 		w.Write([]byte(strings.Join(ctx.append, "")))
-	// 	}
-
-	// }))
-
 	if err := http.ListenAndServe(port, nil); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Println("Error:", err)
 	}
@@ -897,10 +784,6 @@ func (app *App) Autoreload() {
 func (app *App) Description(description string) {
 	app.HtmlHead = append(app.HtmlHead, `<meta name="description" content="`+description+`">`)
 }
-
-// func (app *App) Script(script string) {
-// 	app.HtmlHead = append(app.HtmlHead, `<script>`+script+`</script>`)
-// }
 
 func (app *App) Html(title string, class string, body ...string) string {
 	head := []string{
@@ -1121,9 +1004,6 @@ var __load = Trim(`
 
 var ContentId = Target()
 
-// var HtmlClass = "bg-gray-200 h-full"
-// body_class = "max-w-4xl mx-auto p-4 lg:p-8 gap-8 h-full"
-
 func MakeApp(default_language string) *App {
 
 	return &App{
@@ -1146,7 +1026,6 @@ func MakeApp(default_language string) *App {
 		},
 		HtmlBody: func(class string) string {
 			if class == "" {
-				// class = "bg-gray-200 p-4 lg:p-8 gap-8 h-full"
 				class = "bg-gray-200 h-full"
 			}
 
