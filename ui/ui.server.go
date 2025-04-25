@@ -26,7 +26,7 @@ import (
 type Method = func(*Context) string
 
 var (
-	call_path      = "/call"
+	event_path     = "/"
 	mu             sync.Mutex
 	stored         = make(map[*Method]string)
 	reReplaceChars = regexp.MustCompile(`[./:-]`)
@@ -325,10 +325,10 @@ func (ctx *Context) Post(as ActionType, swap Swap, action *Action) string {
 	}
 
 	if as == FORM {
-		return Normalize(fmt.Sprintf(`__submit(event, "%s", "%s", "%s", %s) `, swap, action.Target.Id, call_path+"/"+path, values))
+		return Normalize(fmt.Sprintf(`__submit(event, "%s", "%s", "%s", %s) `, swap, action.Target.Id, path, values))
 	}
 
-	return Normalize(fmt.Sprintf(`__post(event, "%s", "%s", "%s", %s) `, swap, action.Target.Id, call_path+"/"+path, values))
+	return Normalize(fmt.Sprintf(`__post(event, "%s", "%s", "%s", %s) `, swap, action.Target.Id, path, values))
 }
 
 type Actions struct {
@@ -535,12 +535,12 @@ func (app *App) Register(httpMethod string, path string, method *Method) string 
 
 	_, ok := stored[method]
 	if ok {
-		panic(fmt.Sprintf("Path %s is already registered", funcName))
+		panic("Method already registered: " + funcName)
 	}
 
 	for _, value := range stored {
 		if value == path {
-			panic(fmt.Sprintf("Path already exists in registry: %s -> %s", path, funcName))
+			panic("Path already registered: " + path)
 		}
 	}
 
@@ -549,45 +549,6 @@ func (app *App) Register(httpMethod string, path string, method *Method) string 
 	mu.Unlock()
 
 	fmt.Println("Registering: ", httpMethod, path, " -> ", funcName)
-
-	// http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-	// 	if !strings.Contains(httpMethod, r.Method) {
-	// 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	// 		return
-	// 	}
-
-	// 	var sessionId string
-	// 	cookie, err := r.Cookie("session_id")
-	// 	if err != nil {
-	// 		sessionId = RandomString(30)
-	// 		http.SetCookie(w, &http.Cookie{
-	// 			Name:     "session_id",
-	// 			Value:    sessionId,
-	// 			Path:     "/",
-	// 			HttpOnly: true,
-	// 			Secure:   true,
-	// 			SameSite: http.SameSiteStrictMode,
-	// 			// Expires:  time.Now().Add(time.Hour * 24 * 30),
-	// 		})
-	// 	} else {
-	// 		sessionId = cookie.Value
-	// 	}
-
-	// 	ctx := &Context{
-	// 		App:       app,
-	// 		Request:   r,
-	// 		Response:  w,
-	// 		SessionId: sessionId,
-	// 		append:    []string{},
-	// 	}
-
-	// 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// 	w.Write([]byte((*method)(ctx)))
-
-	// 	if len(ctx.append) > 0 {
-	// 		w.Write([]byte(strings.Join(ctx.append, "")))
-	// 	}
-	// })
 
 	return path
 }
@@ -605,47 +566,16 @@ func (app *App) Page(path string, component Method) **Method {
 	stored[found] = path
 	mu.Unlock()
 
-	http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		if !strings.Contains("GET POST", r.Method) {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		var sessionId string
-		cookie, err := r.Cookie("session_id")
-		if err != nil {
-			sessionId = RandomString(30)
-			http.SetCookie(w, &http.Cookie{
-				Name:     "session_id",
-				Value:    sessionId,
-				Path:     "/",
-				HttpOnly: true,
-				Secure:   true,
-				SameSite: http.SameSiteStrictMode,
-			})
-		} else {
-			sessionId = cookie.Value
-		}
-
-		ctx := &Context{
-			App:       app,
-			Request:   r,
-			SessionId: sessionId,
-			append:    []string{},
-		}
-
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write([]byte((*found)(ctx)))
-
-		if len(ctx.append) > 0 {
-			w.Write([]byte(strings.Join(ctx.append, "")))
-		}
-	})
-
 	return &found
 }
 
 func (app *App) Action(uid string, action Method) **Method {
+	if !strings.HasPrefix(uid, event_path) {
+		uid = event_path + uid
+	}
+
+	uid = strings.ToLower(uid)
+
 	for key, value := range stored {
 		if value == uid {
 			return &key
@@ -654,9 +584,6 @@ func (app *App) Action(uid string, action Method) **Method {
 
 	found := &action
 	app.Register("POST", uid, found)
-	mu.Lock()
-	stored[found] = uid
-	mu.Unlock()
 
 	return &found
 }
@@ -667,6 +594,10 @@ func (app *App) Callable(action Method) **Method {
 	uid = reRemoveChars.ReplaceAllString(uid, "")
 	uid = reReplaceChars.ReplaceAllString(uid, "-")
 
+	if !strings.HasPrefix(uid, event_path) {
+		uid = event_path + uid
+	}
+
 	for key, value := range stored {
 		if value == uid {
 			return &key
@@ -675,10 +606,6 @@ func (app *App) Callable(action Method) **Method {
 
 	found := &action
 	app.Register("POST", uid, found)
-
-	mu.Lock()
-	stored[found] = uid
-	mu.Unlock()
 
 	return &found
 }
@@ -702,44 +629,50 @@ func (app *App) Favicon(assets embed.FS, path string, maxAge time.Duration) {
 	})
 }
 
+func makeContext(app *App, r *http.Request, w http.ResponseWriter) *Context {
+	var sessionId string
+
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		sessionId = RandomString(30)
+		http.SetCookie(w, &http.Cookie{
+			Name:     "session_id",
+			Value:    sessionId,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+		})
+	} else {
+		sessionId = cookie.Value
+	}
+
+	return &Context{
+		App:       app,
+		Request:   r,
+		SessionId: sessionId,
+		append:    []string{},
+	}
+
+}
+
 func (app *App) Listen(port string) {
 	log.Println("Listening on http://0.0.0.0" + port)
 
-	http.HandleFunc(call_path+"/{name}", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains("GET POST", r.Method) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
-		value := r.PathValue("name")
+		value := r.URL.Path
 
-		var sessionId string
-		cookie, err := r.Cookie("session_id")
-		if err != nil {
-			sessionId = RandomString(30)
-			http.SetCookie(w, &http.Cookie{
-				Name:     "session_id",
-				Value:    sessionId,
-				Path:     "/",
-				HttpOnly: true,
-				Secure:   true,
-				SameSite: http.SameSiteStrictMode,
-			})
-		} else {
-			sessionId = cookie.Value
-		}
+		for found, path := range stored {
+			if value == path {
+				ctx := makeContext(app, r, w)
 
-		ctx := &Context{
-			App:       app,
-			Request:   r,
-			SessionId: sessionId,
-			append:    []string{},
-		}
-
-		for method, path := range stored {
-			if path == value {
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				w.Write([]byte((*method)(ctx)))
+				w.Write([]byte((*found)(ctx)))
 
 				if len(ctx.append) > 0 {
 					w.Write([]byte(strings.Join(ctx.append, "")))
@@ -749,7 +682,7 @@ func (app *App) Listen(port string) {
 			}
 		}
 
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		http.Error(w, "Not found", http.StatusNotFound)
 	})
 
 	if err := http.ListenAndServe(port, nil); err != nil && !errors.Is(err, http.ErrServerClosed) {
