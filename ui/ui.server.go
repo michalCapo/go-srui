@@ -703,8 +703,8 @@ func (app *App) Autoreload() {
 				document.body.innerHTML += '<div class="fixed inset-0 z-40 opacity-75 bg-gray-800"></div>';
 				document.body.innerHTML += '<div class="fixed z-50 top-6 left-6 p-6 text-white bg-red-700 rounded border border-gray-500 uppercase font-bold">Offline</div>';
 				setInterval(() => {
-					fetch('/').then(() => window.location.reload())
-				}, 1000);
+					fetch('/').then(() => window.location.reload()).catch(() => {});
+				}, 2000);
 			});
 		</script>
 	`)
