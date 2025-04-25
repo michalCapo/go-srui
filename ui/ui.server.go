@@ -25,16 +25,13 @@ import (
 
 type Method = func(*Context) string
 
-// type Partial struct {
-// 	Method *Method
-// 	Path   string
-// }
-
 var (
+	// pool           = make(map[string]*Method)
 	stored         = make(map[*Method]string)
 	mu             sync.Mutex
 	reReplaceChars = regexp.MustCompile(`[./:-]`)
 	reRemoveChars  = regexp.MustCompile(`[*()\[\]]`)
+	call_path      = "/call"
 )
 
 type BodyItem struct {
@@ -76,7 +73,6 @@ const (
 type Context struct {
 	App       *App
 	Request   *http.Request
-	Response  http.ResponseWriter
 	SessionId string
 	append    []string
 }
@@ -297,6 +293,7 @@ func (ctx *Context) Action(uid string, action Method) **Method {
 	if ctx.App == nil {
 		panic("App is nil, cannot register component. Did you set the App field in Context?")
 	}
+
 	return ctx.App.Action(uid, action)
 }
 
@@ -351,10 +348,10 @@ func (ctx *Context) Post(as ActionType, swap Swap, action *Action) string {
 	}
 
 	if as == FORM {
-		return Normalize(fmt.Sprintf(`__submit(event, "%s", "%s", "%s", %s) `, swap, action.Target.Id, path, values))
+		return Normalize(fmt.Sprintf(`__submit(event, "%s", "%s", "%s", %s) `, swap, action.Target.Id, call_path+"/"+path, values))
 	}
 
-	return Normalize(fmt.Sprintf(`__post(event, "%s", "%s", "%s", %s) `, swap, action.Target.Id, path, values))
+	return Normalize(fmt.Sprintf(`__post(event, "%s", "%s", "%s", %s) `, swap, action.Target.Id, call_path+"/"+path, values))
 }
 
 type Actions struct {
@@ -609,9 +606,9 @@ func (app *App) Register(httpMethod string, path string, method *Method) string 
 		panic(fmt.Sprintf("Path %s is already registered", funcName))
 	}
 
-	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
-	}
+	// if !strings.HasPrefix(path, "/") {
+	// 	path = "/" + path
+	// }
 
 	for _, value := range stored {
 		if value == path {
@@ -625,8 +622,63 @@ func (app *App) Register(httpMethod string, path string, method *Method) string 
 
 	fmt.Println("Registering: ", httpMethod, path, " -> ", funcName)
 
+	// http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+	// 	if !strings.Contains(httpMethod, r.Method) {
+	// 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	// 		return
+	// 	}
+
+	// 	var sessionId string
+	// 	cookie, err := r.Cookie("session_id")
+	// 	if err != nil {
+	// 		sessionId = RandomString(30)
+	// 		http.SetCookie(w, &http.Cookie{
+	// 			Name:     "session_id",
+	// 			Value:    sessionId,
+	// 			Path:     "/",
+	// 			HttpOnly: true,
+	// 			Secure:   true,
+	// 			SameSite: http.SameSiteStrictMode,
+	// 			// Expires:  time.Now().Add(time.Hour * 24 * 30),
+	// 		})
+	// 	} else {
+	// 		sessionId = cookie.Value
+	// 	}
+
+	// 	ctx := &Context{
+	// 		App:       app,
+	// 		Request:   r,
+	// 		Response:  w,
+	// 		SessionId: sessionId,
+	// 		append:    []string{},
+	// 	}
+
+	// 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// 	w.Write([]byte((*method)(ctx)))
+
+	// 	if len(ctx.append) > 0 {
+	// 		w.Write([]byte(strings.Join(ctx.append, "")))
+	// 	}
+	// })
+
+	return path
+}
+
+func (app *App) Page(path string, component Method) **Method {
+	for key, value := range stored {
+		if value == path {
+			return &key
+		}
+	}
+
+	found := &component
+
+	mu.Lock()
+	stored[found] = path
+	mu.Unlock()
+
 	http.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		if !strings.Contains(httpMethod, r.Method) {
+		if !strings.Contains("GET POST", r.Method) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
@@ -642,7 +694,6 @@ func (app *App) Register(httpMethod string, path string, method *Method) string 
 				HttpOnly: true,
 				Secure:   true,
 				SameSite: http.SameSiteStrictMode,
-				// Expires:  time.Now().Add(time.Hour * 24 * 30),
 			})
 		} else {
 			sessionId = cookie.Value
@@ -651,46 +702,33 @@ func (app *App) Register(httpMethod string, path string, method *Method) string 
 		ctx := &Context{
 			App:       app,
 			Request:   r,
-			Response:  w,
 			SessionId: sessionId,
 			append:    []string{},
 		}
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write([]byte((*method)(ctx)))
+		w.Write([]byte((*found)(ctx)))
 
 		if len(ctx.append) > 0 {
 			w.Write([]byte(strings.Join(ctx.append, "")))
 		}
 	})
 
-	return path
-}
-
-func (app *App) Page(path string, component Method) **Method {
-	found, ok := pool[path]
-	if ok {
-		return &found
-	}
-
-	found = &component
-	app.Register("GET POST", path, found)
-	pool[path] = found
-
 	return &found
 }
 
-var pool = make(map[string]*Method)
-
 func (app *App) Action(uid string, action Method) **Method {
-	found, ok := pool[uid]
-	if ok {
-		return &found
+	for key, value := range stored {
+		if value == uid {
+			return &key
+		}
 	}
 
-	found = &action
+	found := &action
 	app.Register("POST", uid, found)
-	pool[uid] = found
+	mu.Lock()
+	stored[found] = uid
+	mu.Unlock()
 
 	return &found
 }
@@ -701,14 +739,18 @@ func (app *App) Callable(action Method) **Method {
 	uid = reRemoveChars.ReplaceAllString(uid, "")
 	uid = reReplaceChars.ReplaceAllString(uid, "-")
 
-	found, ok := pool[uid]
-	if ok {
-		return &found
+	for key, value := range stored {
+		if value == uid {
+			return &key
+		}
 	}
 
-	found = &action
+	found := &action
 	app.Register("POST", uid, found)
-	pool[uid] = found
+
+	mu.Lock()
+	stored[found] = uid
+	mu.Unlock()
 
 	return &found
 }
@@ -734,6 +776,94 @@ func (app *App) Favicon(assets embed.FS, path string, maxAge time.Duration) {
 
 func (app *App) Listen(port string) {
 	log.Println("Listening on http://0.0.0.0" + port)
+
+	http.HandleFunc(call_path+"/{name}", func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains("GET POST", r.Method) {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		value := r.PathValue("name")
+
+		var sessionId string
+		cookie, err := r.Cookie("session_id")
+		if err != nil {
+			sessionId = RandomString(30)
+			http.SetCookie(w, &http.Cookie{
+				Name:     "session_id",
+				Value:    sessionId,
+				Path:     "/",
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+			})
+		} else {
+			sessionId = cookie.Value
+		}
+
+		ctx := &Context{
+			App:       app,
+			Request:   r,
+			SessionId: sessionId,
+			append:    []string{},
+		}
+
+		for method, path := range stored {
+			if path == value {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.Write([]byte((*method)(ctx)))
+
+				if len(ctx.append) > 0 {
+					w.Write([]byte(strings.Join(ctx.append, "")))
+				}
+
+				return
+			}
+		}
+
+		http.Error(w, "Bad request", http.StatusBadRequest)
+	})
+
+	// http.Handle("/call", websocket.Handler(func(ws *websocket.Conn) {
+	// 	defer ws.Close()
+
+	// 	r := ws.Request()
+	// 	w := ws.Request().Response
+
+	// 	var message string
+	// 	websocket.Message.Receive(ws, &message)
+
+	// 	var sessionId string
+	// 	cookie, err := r.Cookie("session_id")
+	// 	if err != nil {
+	// 		sessionId = RandomString(30)
+	// 		http.SetCookie(w, &http.Cookie{
+	// 			Name:     "session_id",
+	// 			Value:    sessionId,
+	// 			Path:     "/",
+	// 			HttpOnly: true,
+	// 			Secure:   true,
+	// 			SameSite: http.SameSiteStrictMode,
+	// 		})
+	// 	} else {
+	// 		sessionId = cookie.Value
+	// 	}
+
+	// 	ctx := &Context{
+	// 		App:       app,
+	// 		Request:   r,
+	// 		SessionId: sessionId,
+	// 		append:    []string{},
+	// 	}
+
+	// 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// 	w.Write([]byte((*method)(ctx)))
+
+	// 	if len(ctx.append) > 0 {
+	// 		w.Write([]byte(strings.Join(ctx.append, "")))
+	// 	}
+
+	// }))
 
 	if err := http.ListenAndServe(port, nil); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Println("Error:", err)
@@ -762,8 +892,6 @@ func (app *App) Autoreload() {
 			ws.Write([]byte("ok"))
 		}
 	}))
-
-	// http.HandleFunc("/live2", func(w http.ResponseWriter, r *http.Request) { for { time.Sleep(time.Minute) } })
 }
 
 func (app *App) Description(description string) {
