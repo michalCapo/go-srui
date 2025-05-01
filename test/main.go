@@ -35,7 +35,7 @@ func main() {
 			)
 		})
 
-		return app.Html("Test", "p-8",
+		return app.Html("Test", "p-8 bg-gray-200",
 			ui.Div("flex flex-row gap-4")(
 				ui.Div("flex justify-start gap-4 items-center")(
 					"Hello",
@@ -44,6 +44,8 @@ func main() {
 
 				Counter(3).Render(ctx),
 			),
+
+			LoginForm("user").Render(ctx),
 		)
 	}
 
@@ -96,5 +98,32 @@ func (counter *TCounter) Render(ctx *ui.Context) string {
 			Click(ctx.Call(up, counter).Replace(target)).
 			Class("rounded-r px-5").
 			Render("+"),
+	)
+}
+
+func LoginForm(name string) *TLoginForm {
+	return &TLoginForm{Name: name}
+}
+
+type TLoginForm struct {
+	Name     string
+	Password string
+}
+
+func (form *TLoginForm) Render(ctx *ui.Context) string {
+	return ui.Form("flex flex-col gap-4 max-w-sm bg-white p-8 my-8 rounded-lg shadow-xl")(
+		ui.IText("Name", form).
+			Required().
+			Render("Name"),
+
+		ui.IPassword("Password").
+			Required().
+			Render("Password"),
+
+		ui.Button().
+			Submit().
+			Color(ui.Blue).
+			Class("rounded").
+			Render("Login"),
 	)
 }
