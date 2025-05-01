@@ -72,6 +72,7 @@ const (
 type Context struct {
 	App       *App
 	Request   *http.Request
+	Response  http.ResponseWriter
 	SessionId string
 	append    []string
 }
@@ -650,6 +651,7 @@ func makeContext(app *App, r *http.Request, w http.ResponseWriter) *Context {
 	return &Context{
 		App:       app,
 		Request:   r,
+		Response:  w,
 		SessionId: sessionId,
 		append:    []string{},
 	}

@@ -68,24 +68,24 @@ type TCollate[T any] struct {
 	OnRow        func(*T, int) string
 	OnExcel      func(*[]T) (string, io.Reader, error)
 	Set          func(*TQuery)
-	Get          func() *TQuery
+	Get          func(*TQuery)
 }
 
 type CollateMethod[T any] = func(*Context, *TCollate[T])
 
-func Collate[T any](app *App, init *TQuery, setup CollateMethod[T]) func(*Context, *TSession, *gorm.DB) func() string {
+func Collate[T any](app *App, prefix string, init *TQuery, setup CollateMethod[T]) func(*Context, *TSession, *gorm.DB) func() string {
 
 	collate := &TCollate[T]{
 		Target:       Target(),
 		TargetFilter: Target(),
 	}
 
-	collate.onXLS = app.Callable(func(ctx *Context) string {
+	collate.onXLS = app.Action(prefix+"-collate-xls", func(ctx *Context) string {
 		// Set query for all records
 		query := makeQuery(init)
 
 		if collate.Get != nil {
-			query = collate.Get()
+			collate.Get(query)
 		}
 
 		query.Limit = 1000000
@@ -163,11 +163,11 @@ func Collate[T any](app *App, init *TQuery, setup CollateMethod[T]) func(*Contex
 		return ""
 	})
 
-	collate.onResize = app.Callable(func(ctx *Context) string {
+	collate.onResize = app.Action(prefix+"-collate-resize", func(ctx *Context) string {
 		query := makeQuery(init)
 
 		if collate.Get != nil {
-			query = collate.Get()
+			collate.Get(query)
 		}
 
 		query.Limit += query.Limit
@@ -179,11 +179,11 @@ func Collate[T any](app *App, init *TQuery, setup CollateMethod[T]) func(*Contex
 		return collate.Render(ctx, query)
 	})
 
-	collate.onSort = app.Callable(func(ctx *Context) string {
+	collate.onSort = app.Action(prefix+"-collate-sort", func(ctx *Context) string {
 		query := makeQuery(init)
 
 		if collate.Get != nil {
-			query = collate.Get()
+			collate.Get(query)
 		}
 
 		body := &TQuery{}
@@ -199,11 +199,11 @@ func Collate[T any](app *App, init *TQuery, setup CollateMethod[T]) func(*Contex
 		return collate.Render(ctx, query)
 	})
 
-	collate.onSearch = app.Callable(func(ctx *Context) string {
+	collate.onSearch = app.Action(prefix+"-collate-search", func(ctx *Context) string {
 		query := makeQuery(init)
 
 		if collate.Get != nil {
-			query = collate.Get()
+			collate.Get(query)
 		}
 
 		body := &TQuery{}
@@ -222,12 +222,12 @@ func Collate[T any](app *App, init *TQuery, setup CollateMethod[T]) func(*Contex
 		return collate.Render(ctx, query)
 	})
 
-	collate.onReset = app.Callable(func(ctx *Context) string {
+	collate.onReset = app.Action(prefix+"-collate-reset", func(ctx *Context) string {
 		query := makeQuery(init)
 
-		if collate.Get != nil {
-			query = collate.Get()
-		}
+		// if collate.Get != nil {
+		// 	collate.Get(query)
+		// }
 
 		query.Limit = collate.Limit
 
@@ -243,10 +243,8 @@ func Collate[T any](app *App, init *TQuery, setup CollateMethod[T]) func(*Contex
 		collate.Set = func(query *TQuery) {
 			session.Save(query)
 		}
-		collate.Get = func() *TQuery {
-			query := &TQuery{}
+		collate.Get = func(query *TQuery) {
 			session.Load(query)
-			return query
 		}
 
 		setup(ctx, collate)
@@ -254,7 +252,7 @@ func Collate[T any](app *App, init *TQuery, setup CollateMethod[T]) func(*Contex
 		query := makeQuery(init)
 
 		if collate.Get != nil {
-			query = collate.Get()
+			collate.Get(query)
 		}
 
 		if collate.Set != nil {
@@ -464,15 +462,21 @@ func Searching[T any](ctx *Context, collate *TCollate[T], query *TQuery) string 
 		return ""
 	}
 
-	reset := TQuery{
-		Search: "",
-		Filter: query.Filter,
-		Order:  query.Order,
-		Offset: query.Offset,
-		Limit:  query.Limit,
-	}
+	// reset := TQuery{
+	// 	Search: "",
+	// 	Filter: query.Filter,
+	// 	Order:  query.Order,
+	// 	Offset: query.Offset,
+	// 	Limit:  query.Limit,
+	// }
 
 	return Div("flex-1 flex gap-px")(
+
+		// Button().
+		// 	Class("rounded shadow bg-white").
+		// 	Color(Blue).
+		// 	Click(ctx.Call(collate.onSearch, reset).Replace(collate.Target)).
+		// 	Render(Icon("fa fa-times")),
 
 		Form("flex-1 flex bg-blue-800 rounded-l-lg", ctx.Send(collate.onSearch).AsSubmit(collate.Target))(
 			IText("Search", query).
@@ -482,16 +486,10 @@ func Searching[T any](ctx *Context, collate *TCollate[T], query *TQuery) string 
 				Render(""),
 
 			Button().
-				Class("rounded shadow bg-white").
-				Color(Blue).
-				Click(ctx.Call(collate.onSearch, reset).Replace(collate.Target)).
-				Render(Icon("fa fa-times")),
-
-			Button().
 				Submit().
 				Class("rounded shadow bg-white").
 				Color(Blue).
-				Render(Icon2("fa fa-fw fa-search", "Filter")),
+				Render(Icon("fa fa-fw fa-search")),
 		),
 
 		If(len(collate.Excel) > 0 || collate.OnExcel != nil, func() string {
@@ -507,7 +505,7 @@ func Searching[T any](ctx *Context, collate *TCollate[T], query *TQuery) string 
 				Class("rounded-r-lg shadow bg-white").
 				Color(Blue).
 				Click(fmt.Sprintf("window.document.getElementById('%s')?.classList.toggle('hidden');", collate.TargetFilter.Id)).
-				Render(Icon("fa fa-fw fa-chevron-down"))
+				Render(Icon3("fa fa-fw fa-chevron-down", "Filter"))
 		}),
 	)
 }
