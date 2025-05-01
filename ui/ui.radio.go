@@ -14,7 +14,10 @@ func IRadio(name string, data ...any) *TInput {
 		name:    name,
 		size:    MD,
 		visible: true,
-		data:    data[0],
+	}
+
+	if len(data) > 0 {
+		c.data = data[0]
 	}
 
 	c.Render = func(text string) string {
@@ -300,12 +303,18 @@ func (c *ARadio) Render(text string) string {
 }
 
 func IRadioButtons(name string, data ...any) *ARadio {
+	var temp any
+
+	if len(data) > 0 {
+		temp = data[0]
+	}
+
 	return &ARadio{
 		name:            name,
 		size:            MD,
 		target:          Target(),
 		visible:         true,
-		data:            data[0],
+		data:            temp,
 		button:          "border text-center rounded cursor-pointer",
 		button_active:   "bg-gray-600 text-white border-black",
 		button_inactive: "bg-white text-black hover:bg-gray-600 hover:text-white",

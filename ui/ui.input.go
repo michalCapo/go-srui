@@ -172,7 +172,10 @@ func IText(name string, data ...any) *TInput {
 		name:    name,
 		size:    MD,
 		visible: true,
-		data:    data[0],
+	}
+
+	if len(data) > 0 {
+		c.data = data[0]
 	}
 
 	c.Render = func(text string) string {
@@ -256,7 +259,10 @@ func IArea(name string, data ...any) *TInput {
 		name:    name,
 		size:    MD,
 		visible: true,
-		data:    data[0],
+	}
+
+	if len(data) > 0 {
+		c.data = data[0]
 	}
 
 	c.Render = func(text string) string {
@@ -323,7 +329,10 @@ func IPassword(name string, data ...any) *TInput {
 		name:    name,
 		size:    MD,
 		visible: true,
-		data:    data[0],
+	}
+
+	if len(data) > 0 {
+		c.data = data[0]
 	}
 
 	c.Render = func(text string) string {
@@ -354,6 +363,7 @@ func IPassword(name string, data ...any) *TInput {
 
 		return Div("")(
 			Label(&c.target).
+				Class(c.classLabel).
 				Required(c.required).
 				Render(text),
 
@@ -462,7 +472,10 @@ func ITime(name string, data ...any) *TInput {
 		name:    name,
 		size:    MD,
 		visible: true,
-		data:    data[0],
+	}
+
+	if len(data) > 0 {
+		c.data = data[0]
 	}
 
 	c.Render = func(text string) string {
@@ -534,7 +547,10 @@ func IDateTime(name string, data ...any) *TInput {
 		name:    name,
 		size:    MD,
 		visible: true,
-		data:    data[0],
+	}
+
+	if len(data) > 0 {
+		c.data = data[0]
 	}
 
 	c.Render = func(text string) string {
@@ -606,7 +622,10 @@ func INumber(name string, data ...any) *TInput {
 		name:    name,
 		size:    MD,
 		visible: true,
-		data:    data[0],
+	}
+
+	if len(data) > 0 {
+		c.data = data[0]
 	}
 
 	c.Render = func(text string) string {

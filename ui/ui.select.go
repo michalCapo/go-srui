@@ -145,12 +145,18 @@ func (c *ASelect) Render(text string) string {
 }
 
 func ISelect(name string, data ...any) *ASelect {
+	var temp any
+
+	if len(data) > 0 {
+		temp = data[0]
+	}
+
 	return &ASelect{
 		as:      "text",
 		name:    name,
 		size:    MD,
 		target:  Target(),
 		visible: true,
-		data:    data[0],
+		data:    temp,
 	}
 }
