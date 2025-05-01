@@ -24,7 +24,7 @@ func main() {
 	hide := app.Callable(button)
 
 	page := func(ctx *ui.Context) string {
-		open := func(ctx *ui.Context) string {
+		show = ctx.Callable(func(ctx *ui.Context) string {
 			return ui.Div("flex gap-2 items-center bg-red-500 rounded text-white p-px pl-4", buttonId)(
 				"Clicked",
 				ui.Button().
@@ -33,9 +33,7 @@ func main() {
 					Color(ui.Red).
 					Render("Hide me"),
 			)
-		}
-
-		show = ctx.Callable(open)
+		})
 
 		return app.Html("Test", "p-8",
 			ui.Div("flex flex-row gap-4")(
@@ -44,7 +42,7 @@ func main() {
 					button(ctx),
 				),
 
-				Counter().Render(ctx, 0),
+				Counter(3).Render(ctx),
 			),
 		)
 	}
@@ -53,8 +51,8 @@ func main() {
 	app.Listen(":1422")
 }
 
-func Counter() *TCounter {
-	return &TCounter{}
+func Counter(count int) *TCounter {
+	return &TCounter{Count: count}
 }
 
 type TCounter struct {
@@ -62,35 +60,41 @@ type TCounter struct {
 }
 
 func (counter *TCounter) Increment(ctx *ui.Context) string {
-	data := &TCounter{}
-	ctx.Body(data)
+	ctx.Body(counter)
 
-	return counter.Render(ctx, data.Count+1)
+	counter.Count++
+
+	return counter.Render(ctx)
 }
 
 func (counter *TCounter) Decrement(ctx *ui.Context) string {
-	data := &TCounter{}
-	ctx.Body(data)
+	ctx.Body(counter)
 
-	return counter.Render(ctx, data.Count-1)
+	counter.Count--
+
+	if counter.Count < 0 {
+		counter.Count = 0
+	}
+
+	return counter.Render(ctx)
 }
 
-func (counter *TCounter) Render(ctx *ui.Context, count int) string {
+func (counter *TCounter) Render(ctx *ui.Context) string {
 	target := ui.Target()
 	up := ctx.Callable(counter.Increment)
 	down := ctx.Callable(counter.Decrement)
 
-	return ui.Div("flex gap-2 items-center bg-purple-500 rounded text-white p-px pl-4", target)(
-		ui.Div("text-2xl")(fmt.Sprintf("%d", count)),
+	return ui.Div("flex gap-2 items-center bg-purple-500 rounded text-white p-px", target)(
+		ui.Button().
+			Click(ctx.Call(down, counter).Replace(target)).
+			Class("rounded-l px-5").
+			Render("-"),
+
+		ui.Div("text-2xl")(fmt.Sprintf("%d", counter.Count)),
 
 		ui.Button().
-			Click(ctx.Call(up, TCounter{Count: count}).Replace(target)).
-			Class("rounded").
-			Render("Increment"),
-
-		ui.Button().
-			Click(ctx.Call(down, TCounter{Count: count}).Replace(target)).
-			Class("rounded").
-			Render("Decrement"),
+			Click(ctx.Call(up, counter).Replace(target)).
+			Class("rounded-r px-5").
+			Render("+"),
 	)
 }
