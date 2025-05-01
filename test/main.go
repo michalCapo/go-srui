@@ -11,7 +11,7 @@ func main() {
 	app.Autoreload()
 
 	buttonId := ui.Target()
-	var show **ui.Method
+	var show **ui.Callable
 
 	button := func(ctx *ui.Context) string {
 		return ui.Button(buttonId).

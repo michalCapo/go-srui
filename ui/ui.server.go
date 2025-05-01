@@ -23,12 +23,12 @@ import (
 	"gorm.io/gorm"
 )
 
-type Method = func(*Context) string
+type Callable = func(*Context) string
 
 var (
 	event_path     = "/"
 	mu             sync.Mutex
-	stored         = make(map[*Method]string)
+	stored         = make(map[*Callable]string)
 	reReplaceChars = regexp.MustCompile(`[./:-]`)
 	reRemoveChars  = regexp.MustCompile(`[*()\[\]]`)
 )
@@ -268,7 +268,7 @@ func (ctx *Context) Body(output any) error {
 	return nil
 }
 
-func (ctx *Context) Action(uid string, action Method) **Method {
+func (ctx *Context) Action(uid string, action Callable) **Callable {
 	if ctx.App == nil {
 		panic("App is nil, cannot register component. Did you set the App field in Context?")
 	}
@@ -276,7 +276,7 @@ func (ctx *Context) Action(uid string, action Method) **Method {
 	return ctx.App.Action(uid, action)
 }
 
-func (ctx *Context) Callable(action Method) **Method {
+func (ctx *Context) Callable(action Callable) **Callable {
 	if ctx.App == nil {
 		panic("App is nil, cannot create callable. Did you set the App field in Context?")
 	}
@@ -353,7 +353,7 @@ func swapize(swap ...Swap) Swap {
 	return INLINE
 }
 
-func (ctx *Context) Submit(method **Method, values ...any) Submits {
+func (ctx *Context) Submit(method **Callable, values ...any) Submits {
 	return Submits{
 		Render: func(target Attr) Attr {
 			return Attr{OnSubmit: ctx.Post(FORM, INLINE, &Action{Method: *method, Target: target, Values: values})}
@@ -364,7 +364,7 @@ func (ctx *Context) Submit(method **Method, values ...any) Submits {
 	}
 }
 
-func (ctx *Context) Send(method **Method, values ...any) Actions {
+func (ctx *Context) Send(method **Callable, values ...any) Actions {
 	return Actions{
 		Render: func(target Attr) string {
 			return ctx.Post(FORM, INLINE, &Action{Method: *method, Target: target, Values: values})
@@ -384,7 +384,7 @@ func (ctx *Context) Send(method **Method, values ...any) Actions {
 	}
 }
 
-func (ctx *Context) Call(method **Method, values ...any) Actions {
+func (ctx *Context) Call(method **Callable, values ...any) Actions {
 	return Actions{
 		Render: func(target Attr) string {
 			return ctx.Post(POST, INLINE, &Action{Method: *method, Target: target, Values: values})
@@ -523,7 +523,7 @@ type App struct {
 	HtmlHead []string
 }
 
-func (app *App) Register(httpMethod string, path string, method *Method) string {
+func (app *App) Register(httpMethod string, path string, method *Callable) string {
 	if path == "" || method == nil {
 		panic("Path and Method cannot be empty")
 	}
@@ -554,7 +554,7 @@ func (app *App) Register(httpMethod string, path string, method *Method) string 
 	return path
 }
 
-func (app *App) Page(path string, component Method) **Method {
+func (app *App) Page(path string, component Callable) **Callable {
 	for key, value := range stored {
 		if value == path {
 			return &key
@@ -570,7 +570,7 @@ func (app *App) Page(path string, component Method) **Method {
 	return &found
 }
 
-func (app *App) Action(uid string, action Method) **Method {
+func (app *App) Action(uid string, action Callable) **Callable {
 	if !strings.HasPrefix(uid, event_path) {
 		uid = event_path + uid
 	}
@@ -589,7 +589,7 @@ func (app *App) Action(uid string, action Method) **Method {
 	return &found
 }
 
-func (app *App) Callable(action Method) **Method {
+func (app *App) Callable(action Callable) **Callable {
 	uid := runtime.FuncForPC(reflect.ValueOf(action).Pointer()).Name()
 	uid = strings.ToLower(uid)
 	uid = reRemoveChars.ReplaceAllString(uid, "")

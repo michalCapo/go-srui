@@ -21,7 +21,6 @@ const (
 )
 
 const (
-	// VALUE = " bg-white border border-gray-400 rounded block w-full shadow h-12"
 	AREA          = " cursor-pointer bg-white border border-gray-400 hover:border-blue-500 rounded block w-full shadow"
 	INPUT         = " cursor-pointer bg-white border border-gray-400 hover:border-blue-500 rounded block w-full shadow h-12"
 	VALUE         = " bg-white border border-gray-400 hover:border-blue-500 rounded block shadow h-12"
@@ -317,7 +316,7 @@ var Classes = func(values ...string) string {
 // }
 
 type Action struct {
-	Method *Method
+	Method *Callable
 	Target Attr
 	Values []any
 	// Type   ActionType

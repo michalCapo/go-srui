@@ -56,11 +56,11 @@ type TCollate[T any] struct {
 	Target       Attr
 	TargetFilter Attr
 	Database     *gorm.DB
-	onReset      **Method
-	onResize     **Method
-	onSort       **Method
-	onSearch     **Method
-	onXLS        **Method
+	onReset      **Callable
+	onResize     **Callable
+	onSort       **Callable
+	onSearch     **Callable
+	onXLS        **Callable
 	Search       []TField
 	Sort         []TField
 	Filter       []TField
