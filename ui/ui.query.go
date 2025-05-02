@@ -407,7 +407,7 @@ func Filtering[T any](ctx *Context, collate *TCollate[T], query *TQuery) string 
 
 	return Div("col-span-2 relative h-0 hidden z-20", collate.TargetFilter)(
 		Div("absolute top-1 right-0 rounded-lg bg-gray-100 border border-black shadow-2xl p-4")(
-			Form("flex flex-col", ctx.Send(collate.onSearch).AsSubmit(collate.Target))(
+			Form("flex flex-col", ctx.Submit(collate.onSearch).Replace(collate.Target))(
 				Hidden("Search", "string", query.Search),
 
 				Map2(collate.Filter, func(item TField, index int) []string {
@@ -478,7 +478,7 @@ func Searching[T any](ctx *Context, collate *TCollate[T], query *TQuery) string 
 		// 	Click(ctx.Call(collate.onSearch, reset).Replace(collate.Target)).
 		// 	Render(Icon("fa fa-times")),
 
-		Form("flex-1 flex bg-blue-800 rounded-l-lg", ctx.Send(collate.onSearch).AsSubmit(collate.Target))(
+		Form("flex-1 flex bg-blue-800 rounded-l-lg", ctx.Submit(collate.onSearch).Replace(collate.Target))(
 			IText("Search", query).
 				Class("flex-1 p-1 w-72").
 				ClassInput("cursor-pointer bg-white border-gray-300 hover:border-blue-500 block w-full p-3").

@@ -439,7 +439,7 @@ func ErrorField(err validator.FieldError) string {
 }
 
 func ErrorForm(errs *error, translations *map[string]string) string {
-	if errs == nil {
+	if errs == nil || *errs == nil {
 		return ""
 	}
 
@@ -450,15 +450,20 @@ func ErrorForm(errs *error, translations *map[string]string) string {
 	return Div("text-red-600 p-4 rounded text-center border-4 border-red-600 bg-white")(
 		Map(temp, func(err *validator.FieldError, _ int) string {
 			trans := (*err).Field()
+			invalid := "has invalid value"
 
 			if translations != nil && (*translations)[trans] != "" {
 				trans = (*translations)[trans]
 			}
 
+			if translations != nil && (*translations)[invalid] != "" {
+				invalid = (*translations)[invalid]
+			}
+
 			return Div("")(
 				Span("font-bold uppercase")(trans),
 				Space,
-				"obsahuje nevalidnú hodnotu",
+				invalid,
 			)
 		}),
 	)

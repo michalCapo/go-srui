@@ -333,25 +333,25 @@ func (ctx *Context) Post(as ActionType, swap Swap, action *Action) string {
 }
 
 type Actions struct {
-	Render   func(target Attr) string
-	Replace  func(target Attr) string
-	None     func() string
-	AsSubmit func(target Attr, swap ...Swap) Attr
-	AsClick  func(target Attr, swap ...Swap) Attr
+	Render  func(target Attr) string
+	Replace func(target Attr) string
+	None    func() string
+	// AsSubmit func(target Attr, swap ...Swap) Attr
+	// AsClick  func(target Attr, swap ...Swap) Attr
 }
 
 type Submits struct {
 	Render  func(target Attr) Attr
 	Replace func(target Attr) Attr
+	None    func() Attr
 }
 
-func swapize(swap ...Swap) Swap {
-	if len(swap) > 0 {
-		return swap[0]
-	}
-
-	return INLINE
-}
+// func swapize(swap ...Swap) Swap {
+// 	if len(swap) > 0 {
+// 		return swap[0]
+// 	}
+// 	return INLINE
+// }
 
 func (ctx *Context) Submit(method **Callable, values ...any) Submits {
 	return Submits{
@@ -360,6 +360,9 @@ func (ctx *Context) Submit(method **Callable, values ...any) Submits {
 		},
 		Replace: func(target Attr) Attr {
 			return Attr{OnSubmit: ctx.Post(FORM, OUTLINE, &Action{Method: *method, Target: target, Values: values})}
+		},
+		None: func() Attr {
+			return Attr{OnSubmit: ctx.Post(FORM, OUTLINE, &Action{Method: *method, Values: values})}
 		},
 	}
 }
@@ -375,12 +378,12 @@ func (ctx *Context) Send(method **Callable, values ...any) Actions {
 		None: func() string {
 			return ctx.Post(FORM, NONE, &Action{Method: *method, Values: values})
 		},
-		AsSubmit: func(target Attr, swap ...Swap) Attr {
-			return Attr{OnSubmit: ctx.Post(FORM, swapize(swap...), &Action{Method: *method, Target: target, Values: values})}
-		},
-		AsClick: func(target Attr, swap ...Swap) Attr {
-			return Attr{OnClick: ctx.Post(FORM, swapize(swap...), &Action{Method: *method, Target: target, Values: values})}
-		},
+		// AsSubmit: func(target Attr, swap ...Swap) Attr {
+		// 	return Attr{OnSubmit: ctx.Post(FORM, swapize(swap...), &Action{Method: *method, Target: target, Values: values})}
+		// },
+		// AsClick: func(target Attr, swap ...Swap) Attr {
+		// 	return Attr{OnClick: ctx.Post(FORM, swapize(swap...), &Action{Method: *method, Target: target, Values: values})}
+		// },
 	}
 }
 
@@ -395,12 +398,12 @@ func (ctx *Context) Call(method **Callable, values ...any) Actions {
 		None: func() string {
 			return ctx.Post(POST, NONE, &Action{Method: *method, Values: values})
 		},
-		AsSubmit: func(target Attr, swap ...Swap) Attr {
-			return Attr{OnSubmit: ctx.Post(POST, swapize(swap...), &Action{Method: *method, Target: target, Values: values})}
-		},
-		AsClick: func(target Attr, swap ...Swap) Attr {
-			return Attr{OnClick: ctx.Post(POST, swapize(swap...), &Action{Method: *method, Target: target, Values: values})}
-		},
+		// AsSubmit: func(target Attr, swap ...Swap) Attr {
+		// 	return Attr{OnSubmit: ctx.Post(POST, swapize(swap...), &Action{Method: *method, Target: target, Values: values})}
+		// },
+		// AsClick: func(target Attr, swap ...Swap) Attr {
+		// 	return Attr{OnClick: ctx.Post(POST, swapize(swap...), &Action{Method: *method, Target: target, Values: values})}
+		// },
 	}
 }
 

@@ -105,7 +105,7 @@ func (c *TInput) Required(value ...bool) *TInput {
 }
 
 func (c *TInput) Error(errs *error) *TInput {
-	if errs == nil {
+	if errs == nil || *errs == nil {
 		return c
 	}
 
