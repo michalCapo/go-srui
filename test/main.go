@@ -116,16 +116,12 @@ func (form *TLoginForm) Success(ctx *ui.Context) string {
 }
 
 func (form *TLoginForm) Login(ctx *ui.Context) string {
-	err := ctx.Body(form)
-
-	if err != nil {
+	if err := ctx.Body(form); err != nil {
 		return form.Render(ctx, &err)
 	}
 
 	v := validator.New()
-	err = v.Struct(form)
-
-	if err != nil {
+	if err := v.Struct(form); err != nil {
 		return form.Render(ctx, &err)
 	}
 
