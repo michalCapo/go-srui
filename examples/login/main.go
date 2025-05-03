@@ -1,9 +1,11 @@
 package main
 
 import (
-	"dasolutions.sk/goui/ui"
+	"dasolutions.sk/go-srui/ui"
 	"github.com/go-playground/validator/v10"
 )
+
+// go-sr-ui
 
 func main() {
 	app := ui.MakeApp("en")

@@ -1,4 +1,4 @@
-module dasolutions.sk/goui
+module dasolutions.sk/go-srui
 
 go 1.23
 
