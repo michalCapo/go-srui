@@ -19,8 +19,6 @@ import (
 	"time"
 
 	"golang.org/x/net/websocket"
-	"gorm.io/datatypes"
-	"gorm.io/gorm"
 )
 
 type Callable = func(*Context) string
@@ -77,58 +75,8 @@ type Context struct {
 	append    []string
 }
 
-type TSession struct {
-	DB        *gorm.DB `gorm:"-"`
-	SessionId string
-	Name      string
-	Data      datatypes.JSON
-}
-
-func (TSession) TableName() string {
-	return "_session"
-}
-
-func (session *TSession) Load(data any) {
-	temp := &TSession{}
-
-	err := session.DB.Where("session_id = ? and name = ?", session.SessionId, session.Name).Take(temp).Error
-	if err != nil {
-		return
-	}
-
-	err = json.Unmarshal(temp.Data, data)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-}
-
-func (session *TSession) Save(output any) {
-	data, err := json.Marshal(output)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	temp := &TSession{
-		SessionId: session.SessionId,
-		Name:      session.Name,
-		Data:      data,
-	}
-
-	session.DB.Where("session_id = ? and name = ?", session.SessionId, session.Name).Save(temp)
-}
-
 func (ctx *Context) Ip() string {
 	return ctx.Request.RemoteAddr
-}
-
-func (ctx *Context) Session(db *gorm.DB, name string) *TSession {
-	return &TSession{
-		DB:        db,
-		Name:      name,
-		SessionId: ctx.SessionId,
-	}
 }
 
 func (ctx *Context) Body(output any) error {
@@ -166,11 +114,9 @@ func (ctx *Context) Body(output any) error {
 					fmt.Println("Error parsing date", err)
 					continue
 				}
-				if structFieldValue.Type() == reflect.TypeOf(gorm.DeletedAt{}) {
-					val = reflect.ValueOf(gorm.DeletedAt{Time: t, Valid: true})
-				} else {
-					val = reflect.ValueOf(t)
-				}
+
+				// if structFieldValue.Type() == reflect.TypeOf(gorm.DeletedAt{}) { val = reflect.ValueOf(gorm.DeletedAt{Time: t, Valid: true}) } else { val = reflect.ValueOf(t) }
+				val = reflect.ValueOf(t)
 
 			case "bool", "checkbox":
 				val = reflect.ValueOf(item.Value == "true")
