@@ -367,6 +367,20 @@ func (ctx *Context) Submit(method **Callable, values ...any) Submits {
 	}
 }
 
+func (ctx *Context) Click(method **Callable, values ...any) Submits {
+	return Submits{
+		Render: func(target Attr) Attr {
+			return Attr{OnClick: ctx.Post(POST, INLINE, &Action{Method: *method, Target: target, Values: values})}
+		},
+		Replace: func(target Attr) Attr {
+			return Attr{OnClick: ctx.Post(POST, OUTLINE, &Action{Method: *method, Target: target, Values: values})}
+		},
+		None: func() Attr {
+			return Attr{OnClick: ctx.Post(POST, OUTLINE, &Action{Method: *method, Values: values})}
+		},
+	}
+}
+
 func (ctx *Context) Send(method **Callable, values ...any) Actions {
 	return Actions{
 		Render: func(target Attr) string {
