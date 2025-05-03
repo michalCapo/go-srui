@@ -1,4 +1,4 @@
-module dasolutions.sk/go-srui
+module github.com/michalCapo/go-srui
 
 go 1.23
 

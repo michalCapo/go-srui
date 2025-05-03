@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"dasolutions.sk/go-srui/ui"
+	"github.com/michalCapo/go-srui/ui"
 )
 
 func main() {

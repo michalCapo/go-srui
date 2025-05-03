@@ -1,8 +1,8 @@
 package main
 
 import (
-	"dasolutions.sk/go-srui/ui"
 	"github.com/go-playground/validator/v10"
+	"github.com/michalCapo/go-srui/ui"
 )
 
 // go-sr-ui

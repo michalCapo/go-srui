@@ -1,7 +1,7 @@
 package main
 
 import (
-	"dasolutions.sk/go-srui/ui"
+	"github.com/michalCapo/go-srui/ui"
 )
 
 func main() {
