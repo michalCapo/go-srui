@@ -5,14 +5,13 @@ import (
 	"github.com/michalCapo/go-srui/ui"
 )
 
-// go-sr-ui
-
 func main() {
 	app := ui.MakeApp("en")
 	app.Autoreload()
 
 	page := func(ctx *ui.Context) string {
 		return app.Html("Test", "p-8 bg-gray-200",
+			// rendering login form with context and nil as error
 			LoginForm("user").Render(ctx, nil),
 		)
 	}
@@ -25,50 +24,66 @@ func LoginForm(name string) *TLoginForm {
 	return &TLoginForm{Name: name}
 }
 
+// definint login form with validations for given fields
 type TLoginForm struct {
 	Name     string `validate:"required,oneof=user"`
 	Password string `validate:"required,oneof=password"`
 }
 
+// we want to display success message
 func (form *TLoginForm) Success(ctx *ui.Context) string {
 	return ui.Div("text-green-600 max-w-md p-8 text-center font-bold rounded-lg bg-white shadow-xl")("Success")
 }
 
+// Login action
 func (form *TLoginForm) Login(ctx *ui.Context) string {
+	// scan request body, if there is an error render with using render method of this component
 	if err := ctx.Body(form); err != nil {
 		return form.Render(ctx, &err)
 	}
 
 	v := validator.New()
+	// lets validate our input, and display error if any
 	if err := v.Struct(form); err != nil {
 		return form.Render(ctx, &err)
 	}
 
+	// great a successfull login
 	return form.Success(ctx)
 }
 
 func (form *TLoginForm) Render(ctx *ui.Context, err *error) string {
+	// translations for login form
 	var Translations = map[string]string{
 		"Name":              "User name",
 		"has invalid value": "is invalid",
 	}
 
+	// temporary id
 	target := ui.Target()
+	// register login action
 	login := ctx.Callable(form.Login)
 
+	// submiting form will call login action and result will be rendered to target id
 	return ui.Form("flex flex-col gap-4 max-w-md bg-white p-8 rounded-lg shadow-xl", target, ctx.Submit(login).Replace(target))(
+		// display all error in one place
 		ui.ErrorForm(err, &Translations),
 
+		// text component
 		ui.IText("Name", form).
+			// is requered
 			Required().
+			// if there is specific erro for this field display it
 			Error(err).
 			Render("Name"),
 
+		// password component
 		ui.IPassword("Password").
 			Required().
 			Error(err).
 			Render("Password"),
 
+		// submit button, see submit part on form serveral lines above
 		ui.Button().
 			Submit().
 			Color(ui.Blue).
