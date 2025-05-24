@@ -14,7 +14,6 @@ A lightweight, server-rendered UI framework for Go that enables building interac
 - Customizable HTML components
 - Built-in form validation using go-playground/validator
 - Support for various input types (text, email, phone, number, etc.)
-- ReCAPTCHA integration
 
 ## Installation
 
