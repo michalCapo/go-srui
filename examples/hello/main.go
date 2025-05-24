@@ -7,7 +7,7 @@ import (
 func main() {
 	// add some basic meta, styling and link to cdn tailwind library
 	app := ui.MakeApp("en")
-	// add autoreload behavoiur to html head
+	// add autoreload behavior to html head
 	app.Autoreload()
 
 	page := func(ctx *ui.Context) string {

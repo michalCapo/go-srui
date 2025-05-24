@@ -24,7 +24,7 @@ func LoginForm(name string) *TLoginForm {
 	return &TLoginForm{Name: name}
 }
 
-// definint login form with validations for given fields
+// defining login form with validations for given fields
 type TLoginForm struct {
 	Name     string `validate:"required,oneof=user"`
 	Password string `validate:"required,oneof=password"`
@@ -43,37 +43,38 @@ func (form *TLoginForm) Login(ctx *ui.Context) string {
 	}
 
 	v := validator.New()
-	// lets validate our input, and display error if any
+	// let's validate our input, and display error if any
 	if err := v.Struct(form); err != nil {
 		return form.Render(ctx, &err)
 	}
 
-	// great a successfull login
+	// great a successful login
 	return form.Success(ctx)
 }
 
-func (form *TLoginForm) Render(ctx *ui.Context, err *error) string {
-	// translations for login form
-	var Translations = map[string]string{
-		"Name":              "User name",
-		"has invalid value": "is invalid",
-	}
+// translations for login form
+var translations = map[string]string{
+	"Name":              "User name",
+	"has invalid value": "is invalid",
+}
 
-	// temporary id
-	target := ui.Target()
+// temporary id
+var target = ui.Target()
+
+func (form *TLoginForm) Render(ctx *ui.Context, err *error) string {
 	// register login action
 	login := ctx.Callable(form.Login)
 
 	// submiting form will call login action and result will be rendered to target id
 	return ui.Form("flex flex-col gap-4 max-w-md bg-white p-8 rounded-lg shadow-xl", target, ctx.Submit(login).Replace(target))(
 		// display all error in one place
-		ui.ErrorForm(err, &Translations),
+		ui.ErrorForm(err, &translations),
 
 		// text component
 		ui.IText("Name", form).
 			// is requered
 			Required().
-			// if there is specific erro for this field display it
+			// if there is specific error for this field display it
 			Error(err).
 			Render("Name"),
 
@@ -83,7 +84,7 @@ func (form *TLoginForm) Render(ctx *ui.Context, err *error) string {
 			Error(err).
 			Render("Password"),
 
-		// submit button, see submit part on form serveral lines above
+		// submit button, see submit part on form several lines above
 		ui.Button().
 			Submit().
 			Color(ui.Blue).
