@@ -5,6 +5,9 @@ A lightweight, server-rendered UI framework for Go that enables building interac
 ## Features
 
 - No JavaScript required
+- No build step required
+- No need to learn new syntax for writing HTML
+- No plugins required for writing HTML
 - Server-side rendering with client-side interactivity
 - Built-in form handling and validation
 - Automatic WebSocket-based live reload for development
@@ -228,9 +231,9 @@ func (form *LoginForm) Render(ctx *ui.Context, err *error) string {
     target := ui.Target()
     login := ctx.Callable(form.Login)
 
-    return ui.Form("flex flex-col gap-4 max-w-md bg-white p-8 rounded-lg shadow-xl", target, 
-        ctx.Submit(login).Replace(target))(
+    return ui.Form("flex flex-col gap-4 max-w-md bg-white p-8 rounded-lg shadow-xl", target, ctx.Submit(login).Replace(target))(
         ui.ErrorForm(err, &translations),
+
         ui.IText("Name", form).
             Required().
             Error(err).
