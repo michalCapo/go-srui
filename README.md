@@ -1,3 +1,5 @@
+![go-srui](https://github.com/user-attachments/assets/ec51e978-8e53-4cb1-8e24-bb5e0494453a)
+
 # Go-SRUI (Server-Rendered UI)
 
 A lightweight, server-rendered UI framework for Go that enables building interactive web applications from your Go code. Define your UI in Go and let the framework handle the rest.
