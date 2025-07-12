@@ -282,8 +282,6 @@ type Actions struct {
 	Render  func(target Attr) string
 	Replace func(target Attr) string
 	None    func() string
-	// AsSubmit func(target Attr, swap ...Swap) Attr
-	// AsClick  func(target Attr, swap ...Swap) Attr
 }
 
 type Submits struct {
@@ -292,51 +290,50 @@ type Submits struct {
 	None    func() Attr
 }
 
-// func swapize(swap ...Swap) Swap {
-// 	if len(swap) > 0 {
-// 		return swap[0]
-// 	}
-// 	return INLINE
-// }
+func (ctx *Context) Submit(method Callable, values ...any) Submits {
+	callable := ctx.Callable(method)
 
-func (ctx *Context) Submit(method **Callable, values ...any) Submits {
 	return Submits{
 		Render: func(target Attr) Attr {
-			return Attr{OnSubmit: ctx.Post(FORM, INLINE, &Action{Method: *method, Target: target, Values: values})}
+			return Attr{OnSubmit: ctx.Post(FORM, INLINE, &Action{Method: *callable, Target: target, Values: values})}
 		},
 		Replace: func(target Attr) Attr {
-			return Attr{OnSubmit: ctx.Post(FORM, OUTLINE, &Action{Method: *method, Target: target, Values: values})}
+			return Attr{OnSubmit: ctx.Post(FORM, OUTLINE, &Action{Method: *callable, Target: target, Values: values})}
 		},
 		None: func() Attr {
-			return Attr{OnSubmit: ctx.Post(FORM, OUTLINE, &Action{Method: *method, Values: values})}
+			return Attr{OnSubmit: ctx.Post(FORM, OUTLINE, &Action{Method: *callable, Values: values})}
 		},
 	}
 }
 
-func (ctx *Context) Click(method **Callable, values ...any) Submits {
+func (ctx *Context) Click(method Callable, values ...any) Submits {
+	callable := ctx.Callable(method)
+
 	return Submits{
 		Render: func(target Attr) Attr {
-			return Attr{OnClick: ctx.Post(POST, INLINE, &Action{Method: *method, Target: target, Values: values})}
+			return Attr{OnClick: ctx.Post(POST, INLINE, &Action{Method: *callable, Target: target, Values: values})}
 		},
 		Replace: func(target Attr) Attr {
-			return Attr{OnClick: ctx.Post(POST, OUTLINE, &Action{Method: *method, Target: target, Values: values})}
+			return Attr{OnClick: ctx.Post(POST, OUTLINE, &Action{Method: *callable, Target: target, Values: values})}
 		},
 		None: func() Attr {
-			return Attr{OnClick: ctx.Post(POST, OUTLINE, &Action{Method: *method, Values: values})}
+			return Attr{OnClick: ctx.Post(POST, OUTLINE, &Action{Method: *callable, Values: values})}
 		},
 	}
 }
 
-func (ctx *Context) Send(method **Callable, values ...any) Actions {
+func (ctx *Context) Send(method Callable, values ...any) Actions {
+	callable := ctx.Callable(method)
+
 	return Actions{
 		Render: func(target Attr) string {
-			return ctx.Post(FORM, INLINE, &Action{Method: *method, Target: target, Values: values})
+			return ctx.Post(FORM, INLINE, &Action{Method: *callable, Target: target, Values: values})
 		},
 		Replace: func(target Attr) string {
-			return ctx.Post(FORM, OUTLINE, &Action{Method: *method, Target: target, Values: values})
+			return ctx.Post(FORM, OUTLINE, &Action{Method: *callable, Target: target, Values: values})
 		},
 		None: func() string {
-			return ctx.Post(FORM, NONE, &Action{Method: *method, Values: values})
+			return ctx.Post(FORM, NONE, &Action{Method: *callable, Values: values})
 		},
 		// AsSubmit: func(target Attr, swap ...Swap) Attr {
 		// 	return Attr{OnSubmit: ctx.Post(FORM, swapize(swap...), &Action{Method: *method, Target: target, Values: values})}
@@ -347,16 +344,18 @@ func (ctx *Context) Send(method **Callable, values ...any) Actions {
 	}
 }
 
-func (ctx *Context) Call(method **Callable, values ...any) Actions {
+func (ctx *Context) Call(method Callable, values ...any) Actions {
+	callable := ctx.Callable(method)
+
 	return Actions{
 		Render: func(target Attr) string {
-			return ctx.Post(POST, INLINE, &Action{Method: *method, Target: target, Values: values})
+			return ctx.Post(POST, INLINE, &Action{Method: *callable, Target: target, Values: values})
 		},
 		Replace: func(target Attr) string {
-			return ctx.Post(POST, OUTLINE, &Action{Method: *method, Target: target, Values: values})
+			return ctx.Post(POST, OUTLINE, &Action{Method: *callable, Target: target, Values: values})
 		},
 		None: func() string {
-			return ctx.Post(POST, NONE, &Action{Method: *method, Values: values})
+			return ctx.Post(POST, NONE, &Action{Method: *callable, Values: values})
 		},
 		// AsSubmit: func(target Attr, swap ...Swap) Attr {
 		// 	return Attr{OnSubmit: ctx.Post(POST, swapize(swap...), &Action{Method: *method, Target: target, Values: values})}

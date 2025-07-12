@@ -62,15 +62,11 @@ func (counter *TCounter) Render(ctx *ui.Context) string {
 	// temporary id
 	target := ui.Target()
 
-	// register increment and decrement function, so server can response to this events
-	up := ctx.Callable(counter.Increment)
-	down := ctx.Callable(counter.Decrement)
-
 	// renger html, see target (plachodler) at the end, this is place where action result will be rendered
 	return ui.Div("flex gap-2 items-center bg-purple-500 rounded text-white p-px", target)(
 		ui.Button().
-			// click will call down action (decrement) with counter variable as values sent to this action and result will be rendered at target place
-			Click(ctx.Call(down, counter).Replace(target)).
+			// click will call decrement action with counter variable as values sent to this action and result will be rendered at target place
+			Click(ctx.Call(counter.Decrement, counter).Replace(target)).
 			Class("rounded-l px-5").
 			Render("-"),
 
@@ -79,7 +75,7 @@ func (counter *TCounter) Render(ctx *ui.Context) string {
 
 		ui.Button().
 			// with action result you can replace (overwrite the target component) or render (inline into target component)
-			Click(ctx.Call(up, counter).Replace(target)).
+			Click(ctx.Call(counter.Increment, counter).Replace(target)).
 			Class("rounded-r px-5").
 			Render("+"),
 	)

@@ -62,11 +62,9 @@ var translations = map[string]string{
 var target = ui.Target()
 
 func (form *TLoginForm) Render(ctx *ui.Context, err *error) string {
-	// register login action
-	login := ctx.Callable(form.Login)
 
 	// submiting form will call login action and result will be rendered to target id
-	return ui.Form("flex flex-col gap-4 max-w-md bg-white p-8 rounded-lg shadow-xl", target, ctx.Submit(login).Replace(target))(
+	return ui.Form("flex flex-col gap-4 max-w-md bg-white p-8 rounded-lg shadow-xl", target, ctx.Submit(form.Login).Replace(target))(
 		// display all error in one place
 		ui.ErrorForm(err, &translations),
 
