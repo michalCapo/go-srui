@@ -58,7 +58,7 @@ func ICheckbox(name string, data ...any) *TInput {
 					Checked: checked,
 
 					Type:     c.as,
-					Id:       c.target.Id,
+					ID:       c.target.ID,
 					Name:     c.name,
 					Required: c.required,
 					Disabled: c.disabled,
@@ -79,7 +79,7 @@ func ICheckbox(name string, data ...any) *TInput {
 						} else {
 							div.classList.add('invalid');
 						}
-					`, c.target.Id)),
+					`, c.target.ID)),
 				},
 			),
 

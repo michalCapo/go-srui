@@ -19,12 +19,14 @@ import (
 	"time"
 
 	"golang.org/x/net/websocket"
+	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 type Callable = func(*Context) string
 
 var (
-	event_path     = "/"
+	eventPath      = "/"
 	mu             sync.Mutex
 	stored         = make(map[*Callable]string)
 	reReplaceChars = regexp.MustCompile(`[./:-]`)
@@ -71,12 +73,62 @@ type Context struct {
 	App       *App
 	Request   *http.Request
 	Response  http.ResponseWriter
-	SessionId string
+	SessionID string
 	append    []string
 }
 
-func (ctx *Context) Ip() string {
+type TSession struct {
+	DB        *gorm.DB `gorm:"-"`
+	SessionID string
+	Name      string
+	Data      datatypes.JSON
+}
+
+func (TSession) TableName() string {
+	return "_session"
+}
+
+func (session *TSession) Load(data any) {
+	temp := &TSession{}
+
+	err := session.DB.Where("session_id = ? and name = ?", session.SessionID, session.Name).Take(temp).Error
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(temp.Data, data)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
+
+func (session *TSession) Save(output any) {
+	data, err := json.Marshal(output)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	temp := &TSession{
+		SessionID: session.SessionID,
+		Name:      session.Name,
+		Data:      data,
+	}
+
+	session.DB.Where("session_id = ? and name = ?", session.SessionID, session.Name).Save(temp)
+}
+
+func (ctx *Context) IP() string {
 	return ctx.Request.RemoteAddr
+}
+
+func (ctx *Context) Session(db *gorm.DB, name string) *TSession {
+	return &TSession{
+		DB:        db,
+		Name:      name,
+		SessionID: ctx.SessionID,
+	}
 }
 
 func (ctx *Context) Body(output any) error {
@@ -114,9 +166,11 @@ func (ctx *Context) Body(output any) error {
 					fmt.Println("Error parsing date", err)
 					continue
 				}
-
-				// if structFieldValue.Type() == reflect.TypeOf(gorm.DeletedAt{}) { val = reflect.ValueOf(gorm.DeletedAt{Time: t, Valid: true}) } else { val = reflect.ValueOf(t) }
-				val = reflect.ValueOf(t)
+				if structFieldValue.Type() == reflect.TypeOf(gorm.DeletedAt{}) {
+					val = reflect.ValueOf(gorm.DeletedAt{Time: t, Valid: true})
+				} else {
+					val = reflect.ValueOf(t)
+				}
 
 			case "bool", "checkbox":
 				val = reflect.ValueOf(item.Value == "true")
@@ -174,6 +228,15 @@ func (ctx *Context) Body(output any) error {
 					continue
 				}
 				val = reflect.ValueOf(n)
+
+			case "decimal":
+				cleanedValue := strings.ReplaceAll(item.Value, "_", "")
+				f, err := strconv.ParseFloat(cleanedValue, 64)
+				if err != nil {
+					fmt.Println("Error parsing decimal", err)
+					continue
+				}
+				val = reflect.ValueOf(f)
 
 			case "float64":
 				cleanedValue := strings.ReplaceAll(item.Value, "_", "")
@@ -234,8 +297,8 @@ func (ctx *Context) Post(as ActionType, swap Swap, action *Action) string {
 	path, ok := stored[action.Method]
 
 	if !ok {
-		func_name := reflect.ValueOf(*action.Method).String()
-		panic(fmt.Sprintf("Function '%s' probably not registered. Cannot make call to this function.", func_name))
+		funcName := reflect.ValueOf(*action.Method).String()
+		panic(fmt.Sprintf("Function '%s' probably not registered. Cannot make call to this function.", funcName))
 	}
 
 	var body []BodyItem
@@ -243,7 +306,7 @@ func (ctx *Context) Post(as ActionType, swap Swap, action *Action) string {
 	for _, item := range action.Values {
 		v := reflect.ValueOf(item)
 
-		if v.Kind() == reflect.Ptr {
+		if v.Kind() == reflect.Pointer {
 			v = v.Elem()
 		}
 
@@ -252,6 +315,13 @@ func (ctx *Context) Post(as ActionType, swap Swap, action *Action) string {
 			fieldName := v.Type().Field(i).Name
 			fieldType := field.Type().Name()
 			fieldValue := field.Interface()
+
+			// Handle time.Time specially to avoid parsing issues
+			if field.Type().String() == "time.Time" {
+				if t, ok := fieldValue.(time.Time); ok {
+					fieldValue = t.Format("2006-01-02 15:04:05 -0700 UTC")
+				}
+			}
 
 			body = append(body, BodyItem{
 				Name:  fieldName,
@@ -272,16 +342,18 @@ func (ctx *Context) Post(as ActionType, swap Swap, action *Action) string {
 	}
 
 	if as == FORM {
-		return Normalize(fmt.Sprintf(`__submit(event, "%s", "%s", "%s", %s) `, swap, action.Target.Id, path, values))
+		return Normalize(fmt.Sprintf(`__submit(event, "%s", "%s", "%s", %s) `, swap, action.Target.ID, path, values))
 	}
 
-	return Normalize(fmt.Sprintf(`__post(event, "%s", "%s", "%s", %s) `, swap, action.Target.Id, path, values))
+	return Normalize(fmt.Sprintf(`__post(event, "%s", "%s", "%s", %s) `, swap, action.Target.ID, path, values))
 }
 
 type Actions struct {
 	Render  func(target Attr) string
 	Replace func(target Attr) string
 	None    func() string
+	// AsSubmit func(target Attr, swap ...Swap) Attr
+	// AsClick  func(target Attr, swap ...Swap) Attr
 }
 
 type Submits struct {
@@ -289,6 +361,13 @@ type Submits struct {
 	Replace func(target Attr) Attr
 	None    func() Attr
 }
+
+// func swapize(swap ...Swap) Swap {
+// 	if len(swap) > 0 {
+// 		return swap[0]
+// 	}
+// 	return INLINE
+// }
 
 func (ctx *Context) Submit(method Callable, values ...any) Submits {
 	callable := ctx.Callable(method)
@@ -301,7 +380,7 @@ func (ctx *Context) Submit(method Callable, values ...any) Submits {
 			return Attr{OnSubmit: ctx.Post(FORM, OUTLINE, &Action{Method: *callable, Target: target, Values: values})}
 		},
 		None: func() Attr {
-			return Attr{OnSubmit: ctx.Post(FORM, OUTLINE, &Action{Method: *callable, Values: values})}
+			return Attr{OnSubmit: ctx.Post(FORM, NONE, &Action{Method: *callable, Values: values})}
 		},
 	}
 }
@@ -317,7 +396,7 @@ func (ctx *Context) Click(method Callable, values ...any) Submits {
 			return Attr{OnClick: ctx.Post(POST, OUTLINE, &Action{Method: *callable, Target: target, Values: values})}
 		},
 		None: func() Attr {
-			return Attr{OnClick: ctx.Post(POST, OUTLINE, &Action{Method: *callable, Values: values})}
+			return Attr{OnClick: ctx.Post(POST, NONE, &Action{Method: *callable, Values: values})}
 		},
 	}
 }
@@ -417,7 +496,7 @@ func (ctx *Context) Error(message string) {
 	displayMessage(ctx, message, "bg-red-700 text-white")
 }
 
-func (ctx *Context) DownloadAs(file *io.Reader, content_type string, name string) error {
+func (ctx *Context) DownloadAs(file *io.Reader, contentType string, name string) error {
 	// Read the file content into a byte slice
 	fileBytes, err := io.ReadAll(*file)
 	if err != nil {
@@ -445,7 +524,7 @@ func (ctx *Context) DownloadAs(file *io.Reader, content_type string, name string
                 a.click();
                 URL.revokeObjectURL(url);
             })();
-        </script>`, fileBase64, content_type, name)),
+        </script>`, fileBase64, contentType, name)),
 	)
 
 	return nil
@@ -481,8 +560,8 @@ func cacheControlMiddleware(next http.Handler, maxAge time.Duration) http.Handle
 
 type App struct {
 	Lanugage string
-	HtmlBody func(string) string
-	HtmlHead []string
+	HTMLBody func(string) string
+	HTMLHead []string
 }
 
 func (app *App) Register(httpMethod string, path string, method *Callable) string {
@@ -533,8 +612,8 @@ func (app *App) Page(path string, component Callable) **Callable {
 }
 
 func (app *App) Action(uid string, action Callable) **Callable {
-	if !strings.HasPrefix(uid, event_path) {
-		uid = event_path + uid
+	if !strings.HasPrefix(uid, eventPath) {
+		uid = eventPath + uid
 	}
 
 	uid = strings.ToLower(uid)
@@ -557,8 +636,8 @@ func (app *App) Callable(action Callable) **Callable {
 	uid = reRemoveChars.ReplaceAllString(uid, "")
 	uid = reReplaceChars.ReplaceAllString(uid, "-")
 
-	if !strings.HasPrefix(uid, event_path) {
-		uid = event_path + uid
+	if !strings.HasPrefix(uid, eventPath) {
+		uid = eventPath + uid
 	}
 
 	for key, value := range stored {
@@ -593,31 +672,30 @@ func (app *App) Favicon(assets embed.FS, path string, maxAge time.Duration) {
 }
 
 func makeContext(app *App, r *http.Request, w http.ResponseWriter) *Context {
-	var sessionId string
+	var sessionID string
 
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
-		sessionId = RandomString(30)
+		sessionID = RandomString(30)
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session_id",
-			Value:    sessionId,
+			Value:    sessionID,
 			Path:     "/",
 			HttpOnly: true,
 			Secure:   true,
 			SameSite: http.SameSiteStrictMode,
 		})
 	} else {
-		sessionId = cookie.Value
+		sessionID = cookie.Value
 	}
 
 	return &Context{
 		App:       app,
 		Request:   r,
 		Response:  w,
-		SessionId: sessionId,
+		SessionID: sessionID,
 		append:    []string{},
 	}
-
 }
 
 func (app *App) Listen(port string) {
@@ -659,10 +737,12 @@ func (app *App) Listen(port string) {
 	}
 }
 
-func (app *App) Autoreload() {
-	app.HtmlHead = append(app.HtmlHead, `
+func (app *App) Autoreload(enable bool) {
+	if enable {
+		app.HTMLHead = append(app.HTMLHead, `
 		<script>
-			const socket = new WebSocket('ws://' + window.location.host + '/live');
+			const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+			const socket = new WebSocket(protocol + window.location.host + '/live');
 			socket.addEventListener('close', function (event) {
 				document.body.innerHTML += '<div class="fixed inset-0 z-40 opacity-75 bg-gray-800"></div>';
 				document.body.innerHTML += '<div class="fixed z-50 top-6 left-6 p-6 text-white bg-red-700 rounded border border-gray-500 uppercase font-bold">Offline</div>';
@@ -673,28 +753,29 @@ func (app *App) Autoreload() {
 		</script>
 	`)
 
-	http.Handle("/live", websocket.Handler(func(ws *websocket.Conn) {
-		defer ws.Close()
+		http.Handle("/live", websocket.Handler(func(ws *websocket.Conn) {
+			defer ws.Close()
 
-		for {
-			time.Sleep(10 * time.Second)
-			ws.Write([]byte("ok"))
-		}
-	}))
+			for {
+				time.Sleep(10 * time.Second)
+				ws.Write([]byte("ok"))
+			}
+		}))
+	}
 }
 
 func (app *App) Description(description string) {
-	app.HtmlHead = append(app.HtmlHead, `<meta name="description" content="`+description+`">`)
+	app.HTMLHead = append(app.HTMLHead, `<meta name="description" content="`+description+`">`)
 }
 
-func (app *App) Html(title string, class string, body ...string) string {
+func (app *App) HTML(title string, class string, body ...string) string {
 	head := []string{
 		`<title>` + title + `</title>`,
 	}
 
-	head = append(head, app.HtmlHead...)
+	head = append(head, app.HTMLHead...)
 
-	html := app.HtmlBody(class)
+	html := app.HTMLBody(class)
 	html = strings.ReplaceAll(html, "__lang__", app.Lanugage)
 	html = strings.ReplaceAll(html, "__head__", strings.Join(head, " "))
 	html = strings.ReplaceAll(html, "__body__", strings.Join(body, " "))
@@ -904,13 +985,12 @@ var __load = Trim(`
     }
 `)
 
-var ContentId = Target()
+var ContentID = Target()
 
-func MakeApp(default_language string) *App {
-
+func MakeApp(defaultLanguage string) *App {
 	return &App{
-		Lanugage: default_language,
-		HtmlHead: []string{
+		Lanugage: defaultLanguage,
+		HTMLHead: []string{
 			`<meta charset="UTF-8">`,
 			`<meta name="viewport" content="width=device-width, initial-scale=1.0">`,
 			`<style>
@@ -922,13 +1002,29 @@ func MakeApp(default_language string) *App {
 					border-bottom-color: red;
 					border-bottom-style: dashed;
 				}
+				/* Fix for Safari mobile date input width overflow */
+				@media (max-width: 768px) {
+					input[type="date"] {
+						max-width: 100% !important;
+						width: 100% !important;
+						min-width: 0 !important;
+						box-sizing: border-box !important;
+						overflow: hidden !important;
+					}
+					
+					/* Ensure parent containers don't overflow */
+					input[type="date"]::-webkit-datetime-edit {
+						max-width: 100% !important;
+						overflow: hidden !important;
+					}
+				}
 			</style>`,
 			`<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" integrity="sha512-wnea99uKIC3TJF7v4eKk4Y+lMz2Mklv18+r4na2Gn1abDRPPOeef95xTzdwGD9e6zXJBteMIhZ1+68QC5byJZw==" crossorigin="anonymous" referrerpolicy="no-referrer" />`,
 			Script(__stringify, __post, __submit, __load),
 		},
-		HtmlBody: func(class string) string {
+		HTMLBody: func(class string) string {
 			if class == "" {
-				class = "bg-gray-200 h-full"
+				class = "bg-gray-200"
 			}
 
 			return fmt.Sprintf(`
@@ -937,7 +1033,7 @@ func MakeApp(default_language string) *App {
 					<head>__head__</head>
 					<body id="%s" class="relative">__body__</body>
 				</html>
-			`, class, ContentId.Id)
+			`, class, ContentID.ID)
 		},
 	}
 }

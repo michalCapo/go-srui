@@ -2,7 +2,7 @@ package ui
 
 import "strings"
 
-type AButton struct {
+type button struct {
 	size     string
 	color    string
 	onclick  string
@@ -14,8 +14,8 @@ type AButton struct {
 	attr     []Attr
 }
 
-func Button(attr ...Attr) *AButton {
-	return &AButton{
+func Button(attr ...Attr) *button {
+	return &button{
 		as:      "div",
 		size:    MD,
 		visible: true,
@@ -24,42 +24,42 @@ func Button(attr ...Attr) *AButton {
 	}
 }
 
-func (b *AButton) Submit() *AButton {
+func (b *button) Submit() *button {
 	b.as = "submit"
 	return b
 }
 
-func (b *AButton) Reset() *AButton {
+func (b *button) Reset() *button {
 	b.as = "reset"
 	return b
 }
 
-func (b *AButton) If(value bool) *AButton {
+func (b *button) If(value bool) *button {
 	b.visible = value
 	return b
 }
 
-func (b *AButton) Disabled(value bool) *AButton {
+func (b *button) Disabled(value bool) *button {
 	b.disabled = value
 	return b
 }
 
-func (b *AButton) Class(value ...string) *AButton {
+func (b *button) Class(value ...string) *button {
 	b.class = strings.Join(value, " ")
 	return b
 }
 
-func (b *AButton) Color(value string) *AButton {
+func (b *button) Color(value string) *button {
 	b.color = value
 	return b
 }
 
-func (b *AButton) Size(value string) *AButton {
+func (b *button) Size(value string) *button {
 	b.size = value
 	return b
 }
 
-func (b *AButton) Click(onclick string) *AButton {
+func (b *button) Click(onclick string) *button {
 	// if action.Target.Id == "" {
 	// 	action.Target = b.target
 	// }
@@ -69,13 +69,13 @@ func (b *AButton) Click(onclick string) *AButton {
 	return b
 }
 
-func (b *AButton) Href(value string) *AButton {
+func (b *button) Href(value string) *button {
 	b.as = "a"
 	b.attr = append(b.attr, Attr{Href: value})
 	return b
 }
 
-func (b *AButton) Render(text string) string {
+func (b *button) Render(text string) string {
 	if !b.visible {
 		return ""
 	}
@@ -86,7 +86,7 @@ func (b *AButton) Render(text string) string {
 		return A(
 			class,
 			append(b.attr, Attr{
-				Id: b.target.Id,
+				ID: b.target.ID,
 			})...,
 		)(text)
 	}
@@ -95,7 +95,7 @@ func (b *AButton) Render(text string) string {
 		return Div(
 			class,
 			append(b.attr, Attr{
-				Id:      b.target.Id,
+				ID:      b.target.ID,
 				OnClick: b.onclick,
 			})...,
 		)(text)
@@ -105,7 +105,7 @@ func (b *AButton) Render(text string) string {
 		class,
 		append(b.attr,
 			Attr{
-				Id:      b.target.Id,
+				ID:      b.target.ID,
 				Type:    b.as,
 				OnClick: b.onclick,
 			})...,

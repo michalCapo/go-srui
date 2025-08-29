@@ -6,7 +6,7 @@ import (
 
 func main() {
 	app := ui.MakeApp("en")
-	app.Autoreload()
+	app.Autoreload(true)
 
 	// create id (placeholder)
 	buttonId := ui.Target()
@@ -39,7 +39,7 @@ func main() {
 		}
 
 		// again, at this point we are rending whole page, so use app.Html function
-		return app.Html("Test", "p-8 bg-gray-200",
+		return app.HTML("Test", "p-8 bg-gray-200",
 			ui.Div("flex flex-row gap-4")(
 				ui.Div("flex justify-start gap-4 items-center")(
 					// button function is used as render function

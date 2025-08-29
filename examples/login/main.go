@@ -7,10 +7,10 @@ import (
 
 func main() {
 	app := ui.MakeApp("en")
-	app.Autoreload()
+	app.Autoreload(true)
 
 	page := func(ctx *ui.Context) string {
-		return app.Html("Test", "p-8 bg-gray-200",
+		return app.HTML("Test", "p-8 bg-gray-200",
 			// rendering login form with context and nil as error
 			LoginForm("user").Render(ctx, nil),
 		)

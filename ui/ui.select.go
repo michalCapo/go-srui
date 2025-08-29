@@ -125,10 +125,10 @@ func (c *ASelect) Render(text string) string {
 			Render(text),
 
 		Select(
-			Classes(INPUT, c.size, If(c.disabled, func() string { return "cursor-text bg-yellow-100" }), If(c.error != nil, func() string { return "border-l-8 border-red-600" })),
+			Classes(INPUT, c.size, If(c.disabled, func() string { return "cursor-text bg-gray-100" }), If(c.error != nil, func() string { return "border-l-8 border-red-600" })),
 			Attr{
 				Type:        c.as,
-				Id:          c.target.Id,
+				ID:          c.target.ID,
 				Name:        c.name,
 				Required:    c.required,
 				Placeholder: c.placeholder,
@@ -138,7 +138,7 @@ func (c *ASelect) Render(text string) string {
 		)(
 			If(c.empty, func() string { return Option("", Attr{Value: ""})() }),
 			Map(c.options, func(option *AOption, index int) string {
-				return Option("", Attr{Value: option.Id, Selected: If(option.Id == value, func() string { return "selected" })})(option.Value)
+				return Option("", Attr{Value: option.ID, Selected: If(option.ID == value, func() string { return "selected" })})(option.Value)
 			}),
 		),
 	)

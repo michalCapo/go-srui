@@ -27,6 +27,7 @@ type TInput struct {
 	name         string
 	pattern      string
 	value        string
+	valueFormat  string
 	error        validator.FieldError
 	target       Attr
 	numbers      struct {
@@ -37,6 +38,12 @@ type TInput struct {
 	visible  bool
 	required bool
 	disabled bool
+	readonly bool
+}
+
+func (c *TInput) Format(value string) *TInput {
+	c.valueFormat = value
+	return c
 }
 
 func (c *TInput) Rows(value uint8) *TInput {
@@ -117,6 +124,16 @@ func (c *TInput) Error(errs *error) *TInput {
 		}
 	}
 
+	return c
+}
+
+func (c *TInput) Readonly(value ...bool) *TInput {
+	if value == nil {
+		c.readonly = true
+		return c
+	}
+
+	c.readonly = value[0]
 	return c
 }
 
@@ -213,9 +230,13 @@ func IText(name string, data ...any) *TInput {
 				Render(text),
 
 			Input(
-				Classes(INPUT, c.size, If(c.disabled, func() string { return DISABLED }), If(c.error != nil, func() string { return "border-l-8 border-red-600" }), c.classInput),
+				Classes(INPUT, c.size, c.classInput,
+					If(c.disabled, func() string { return DISABLED }),
+					If(c.error != nil, func() string { return "border-l-8 border-red-600" }),
+					If(c.readonly, func() string { return "cursor-text pointer-events-none" }),
+				),
 				Attr{
-					Id:           c.target.Id,
+					ID:           c.target.ID,
 					Name:         c.name,
 					Type:         c.as,
 					OnChange:     c.onchange,
@@ -299,20 +320,26 @@ func IArea(name string, data ...any) *TInput {
 
 		return Div(c.class)(
 			Label(&c.target).
+				Class(c.classLabel).
 				Required(c.required).
 				Render(text),
 
 			Textarea(
-				Classes(AREA, c.size, If(c.disabled, func() string { return DISABLED }), If(c.error != nil, func() string { return "border-l-8 border-red-600" })),
+				Classes(AREA, c.size,
+					If(c.disabled, func() string { return DISABLED }),
+					If(c.error != nil, func() string { return "border-l-8 border-red-600" }),
+					If(c.readonly, func() string { return "cursor-default" }),
+				),
 				Attr{
 					Rows: rows,
 
 					Type:        c.as,
-					Id:          c.target.Id,
+					ID:          c.target.ID,
 					Name:        c.name,
 					OnClick:     c.onclick,
 					Required:    c.required,
 					Disabled:    c.disabled,
+					Readonly:    c.readonly,
 					Placeholder: c.placeholder,
 				},
 			)(value),
@@ -373,7 +400,7 @@ func IPassword(name string, data ...any) *TInput {
 					Value: value,
 
 					Type:        c.as,
-					Id:          c.target.Id,
+					ID:          c.target.ID,
 					Name:        c.name,
 					OnClick:     c.onclick,
 					Required:    c.required,
@@ -389,11 +416,12 @@ func IPassword(name string, data ...any) *TInput {
 
 func IDate(name string, data ...any) *TInput {
 	c := &TInput{
-		as:      "date",
-		target:  Target(),
-		name:    name,
-		size:    MD,
-		visible: true,
+		as:         "date",
+		target:     Target(),
+		name:       name,
+		size:       MD,
+		visible:    true,
+		classInput: " text-left min-w-0 appearance-none max-w-full",
 	}
 
 	if len(data) > 0 {
@@ -438,23 +466,57 @@ func IDate(name string, data ...any) *TInput {
 			max = c.dates.Max.Format(time.DateOnly)
 		}
 
-		return Div(c.class)(
+		// Generate JavaScript validation/clamping for Safari where min/max may be ignored in picker UI
+		onChangeWithValidation := c.onchange
+		if !c.dates.Min.IsZero() || !c.dates.Max.IsZero() {
+			minDate := ""
+			maxDate := ""
+			if !c.dates.Min.IsZero() {
+				minDate = c.dates.Min.Format(time.DateOnly)
+			}
+			if !c.dates.Max.IsZero() {
+				maxDate = c.dates.Max.Format(time.DateOnly)
+			}
+
+			validationJS := fmt.Sprintf(`
+				(function(){
+					var v = this.value;
+					var min = '%s';
+					var max = '%s';
+					if (!v) { return; }
+					this.setCustomValidity('');
+					// Compare ISO dates lexicographically (YYYY-MM-DD)
+					if (min && v < min) { this.value = min; v = min; }
+					if (max && v > max) { this.value = max; v = max; }
+					if (this.reportValidity) { this.reportValidity(); }
+				}).call(this)
+			`, minDate, maxDate)
+
+			if c.onchange != "" {
+				onChangeWithValidation = validationJS + "; " + c.onchange
+			} else {
+				onChangeWithValidation = validationJS
+			}
+		}
+
+		return Div(Classes(c.class, "min-w-0"))(
 			Label(&c.target).
+				Class(c.classLabel).
 				Required(c.required).
 				Render(text),
 
 			Input(
-				Classes(INPUT, c.size, If(c.disabled, func() string { return DISABLED }), If(c.error != nil, func() string { return "border-l-8 border-red-600" })),
+				Classes(INPUT, c.size, If(c.disabled, func() string { return DISABLED }), If(c.error != nil, func() string { return "border-l-8 border-red-600" }), "min-w-0 max-w-full", c.classInput),
 				Attr{
 					Min:   min,
 					Max:   max,
 					Value: value,
 
 					Type:        c.as,
-					Id:          c.target.Id,
+					ID:          c.target.ID,
 					Name:        c.name,
 					OnClick:     c.onclick,
-					OnChange:    c.onchange,
+					OnChange:    onChangeWithValidation,
 					Required:    c.required,
 					Disabled:    c.disabled,
 					Placeholder: c.placeholder,
@@ -516,6 +578,7 @@ func ITime(name string, data ...any) *TInput {
 
 		return Div("")(
 			Label(&c.target).
+				Class(c.classLabel).
 				Required(c.required).
 				Render(text),
 
@@ -527,7 +590,7 @@ func ITime(name string, data ...any) *TInput {
 					Value: value,
 
 					Type:        c.as,
-					Id:          c.target.Id,
+					ID:          c.target.ID,
 					Name:        c.name,
 					OnClick:     c.onclick,
 					Required:    c.required,
@@ -591,6 +654,7 @@ func IDateTime(name string, data ...any) *TInput {
 
 		return Div("")(
 			Label(&c.target).
+				Class(c.classLabel).
 				Required(c.required).
 				Render(text),
 
@@ -602,7 +666,7 @@ func IDateTime(name string, data ...any) *TInput {
 					Value: value,
 
 					Type:        c.as,
-					Id:          c.target.Id,
+					ID:          c.target.ID,
 					Name:        c.name,
 					OnClick:     c.onclick,
 					Required:    c.required,
@@ -617,11 +681,12 @@ func IDateTime(name string, data ...any) *TInput {
 
 func INumber(name string, data ...any) *TInput {
 	c := &TInput{
-		as:      "number",
-		target:  Target(),
-		name:    name,
-		size:    MD,
-		visible: true,
+		as:          "number",
+		target:      Target(),
+		name:        name,
+		size:        MD,
+		visible:     true,
+		valueFormat: "%v",
 	}
 
 	if len(data) > 0 {
@@ -648,12 +713,12 @@ func INumber(name string, data ...any) *TInput {
 			// tmp := v.FieldByName(c.name)
 
 			// if tmp.IsValid() {
-			// 	value = fmt.Sprintf("%v", tmp.Interface())
-			// }
+			// 	value = fmt.Sprintf("%v", tmp.Interface()) }
 
 			tmp, err := PathValue(c.data, c.name)
 			if err == nil {
-				value = fmt.Sprintf("%v", tmp.Interface())
+				// value = fmt.Sprintf("%0.2f", tmp.Interface())
+				value = fmt.Sprintf(c.valueFormat, tmp.Interface())
 			}
 		}
 
@@ -671,6 +736,7 @@ func INumber(name string, data ...any) *TInput {
 
 		return Div(c.class)(
 			Label(&c.target).
+				Class(c.classLabel).
 				Required(c.required).
 				Render(text),
 
@@ -683,7 +749,7 @@ func INumber(name string, data ...any) *TInput {
 					Value: value,
 
 					Type:        c.as,
-					Id:          c.target.Id,
+					ID:          c.target.ID,
 					Name:        c.name,
 					OnClick:     c.onclick,
 					Required:    c.required,
@@ -691,6 +757,15 @@ func INumber(name string, data ...any) *TInput {
 					Placeholder: c.placeholder,
 				},
 			),
+
+			// Script(fmt.Sprintf(`
+			// 	(function() {
+			// 		const input = document.getElementById('%v');
+			// 		if (input.value) {
+			// 			input.value = parseFloat(input.value).toFixed(2);
+			// 		}
+			// 	})();
+			// `, c.target.ID)),
 		)
 	}
 	return c
@@ -764,7 +839,7 @@ func IValue(attr ...Attr) *TInput {
 		}
 
 		attr = append(attr, Attr{
-			Id:          c.target.Id,
+			ID:          c.target.ID,
 			Name:        c.name,
 			Required:    c.required,
 			Disabled:    c.disabled,

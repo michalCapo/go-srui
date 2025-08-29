@@ -1,7 +1,10 @@
+// Package ui, holds components for web application
 package ui
 
 import (
+	"bytes"
 	"fmt"
+	"log"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -9,6 +12,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
+	"github.com/yuin/goldmark"
 )
 
 const (
@@ -21,11 +25,12 @@ const (
 )
 
 const (
-	AREA          = " cursor-pointer bg-white border border-gray-400 hover:border-blue-500 rounded block w-full shadow"
-	INPUT         = " cursor-pointer bg-white border border-gray-400 hover:border-blue-500 rounded block w-full shadow h-12"
-	VALUE         = " bg-white border border-gray-400 hover:border-blue-500 rounded block shadow h-12"
+	// DISABLED      = " cursor-text bg-gray-100 pointer-events-none"
+	AREA          = " cursor-pointer bg-white border border-gray-300 hover:border-blue-500 rounded-lg block w-full"
+	INPUT         = " cursor-pointer bg-white border border-gray-300 hover:border-blue-500 rounded-lg block w-full h-12"
+	VALUE         = " bg-white border border-gray-300 hover:border-blue-500 rounded-lg block h-12"
 	BTN           = " cursor-pointer font-bold text-center select-none"
-	DISABLED      = " cursor-text bg-gray-300 pointer-events-none"
+	DISABLED      = " cursor-text pointer-events-none bg-gray-50"
 	Yellow        = " bg-yellow-400 text-gray-800 hover:text-gray-200 hover:bg-yellow-600 font-bold border-gray-300 flex items-center justify-center"
 	YellowOutline = " border border-yellow-500 text-yellow-600 hover:text-gray-700 hover:bg-yellow-500 flex items-center justify-center"
 	Green         = " bg-green-600 text-white hover:bg-green-700 checked:bg-green-600 border-gray-300 flex items-center justify-center"
@@ -45,7 +50,7 @@ const (
 type Attr struct {
 	OnClick      string
 	Step         string
-	Id           string
+	ID           string
 	Href         string
 	Title        string
 	Alt          string
@@ -68,12 +73,15 @@ type Attr struct {
 	Target       string
 	Rows         uint8
 	Cols         uint8
+	Width        uint8
+	Height       uint8
 	Disabled     bool
 	Required     bool
+	Readonly     bool
 }
 
 type AOption struct {
-	Id    string
+	ID    string
 	Value string
 }
 
@@ -81,7 +89,7 @@ func MakeOptions(options []string) []AOption {
 	var result []AOption
 
 	for _, option := range options {
-		result = append(result, AOption{Id: option, Value: option})
+		result = append(result, AOption{ID: option, Value: option})
 	}
 
 	return result
@@ -92,8 +100,8 @@ func attributes(attrs ...Attr) string {
 
 	for _, attr := range attrs {
 
-		if attr.Id != "" {
-			result = append(result, fmt.Sprintf(`id="%s"`, attr.Id))
+		if attr.ID != "" {
+			result = append(result, fmt.Sprintf(`id="%s"`, attr.ID))
 		}
 
 		if attr.Href != "" {
@@ -172,6 +180,22 @@ func attributes(attrs ...Attr) string {
 			result = append(result, fmt.Sprintf(`cols="%d"`, attr.Cols))
 		}
 
+		if attr.Width != 0 {
+			result = append(result, fmt.Sprintf(`width="%d"`, attr.Width))
+		}
+
+		if attr.Height != 0 {
+			result = append(result, fmt.Sprintf(`height="%d"`, attr.Height))
+		}
+
+		if attr.Width != 0 {
+			result = append(result, fmt.Sprintf(`width="%d"`, attr.Width))
+		}
+
+		if attr.Height != 0 {
+			result = append(result, fmt.Sprintf(`height="%d"`, attr.Height))
+		}
+
 		if attr.Rows != 0 {
 			result = append(result, fmt.Sprintf(`rows="%d"`, attr.Rows))
 		}
@@ -199,6 +223,10 @@ func attributes(attrs ...Attr) string {
 		if attr.Disabled {
 			result = append(result, `disabled="disabled"`)
 		}
+
+		if attr.Readonly {
+			result = append(result, `readonly="readonly"`)
+		}
 	}
 
 	return strings.Join(result, " ")
@@ -223,6 +251,7 @@ func closed(tag string) func(class string, attr ...Attr) string {
 var (
 	I        = open("i")
 	A        = open("a")
+	P        = open("p")
 	Div      = open("div")
 	Span     = open("span")
 	Form     = open("form")
@@ -231,6 +260,7 @@ var (
 	Option   = open("option")
 	List     = open("ul")
 	ListItem = open("li")
+	Canvas   = open("canvas")
 
 	Img   = closed("img")
 	Input = closed("input")
@@ -238,18 +268,37 @@ var (
 	Flex1 = Div("flex-1")()
 
 	Space = "&nbsp;"
-	W35   = Attr{Style: "width: 35rem;"}
-	W30   = Attr{Style: "width: 30rem;"}
-	W25   = Attr{Style: "width: 25rem;"}
-	W20   = Attr{Style: "width: 20rem;"}
+	W35   = Attr{Style: "max-width: 35rem;"}
+	W30   = Attr{Style: "max-width: 30rem;"}
+	W25   = Attr{Style: "max-width: 25rem;"}
+	W20   = Attr{Style: "max-width: 20rem;"}
 )
+
+func mdToHTML(md []byte) string {
+	var html bytes.Buffer
+	if err := goldmark.Convert(md, &html); err != nil {
+		log.Fatal(err)
+	}
+
+	return html.String()
+}
+
+var Markdown = func(css string) func(elements ...string) string {
+	return func(elements ...string) string {
+		md := []byte(strings.Join(elements, " "))
+		md = bytes.ReplaceAll(md, []byte("\t"), []byte(""))
+		html := mdToHTML(md)
+
+		return fmt.Sprintf(`<div class="markdown %s">%s</div>`, css, html)
+	}
+}
 
 var Script = func(value ...string) string {
 	return Trim(fmt.Sprintf(`<script>%s</script>`, strings.Join(value, " ")))
 }
 
 var Target = func() Attr {
-	return Attr{Id: "i" + RandomString(15)}
+	return Attr{ID: "i" + RandomString(15)}
 }
 
 func Variable[T any](getter func(*T) string) func(item *T) Attr {
@@ -257,12 +306,12 @@ func Variable[T any](getter func(*T) string) func(item *T) Attr {
 
 	return func(item *T) Attr {
 		value := getter(item)
-		return Attr{Id: temp.Id + "_" + value}
+		return Attr{ID: temp.ID + "_" + value}
 	}
 }
 
-var Id = func(target string) Attr {
-	return Attr{Id: target}
+var ID = func(target string) Attr {
+	return Attr{ID: target}
 }
 
 var Href = func(value string, target ...string) Attr {
@@ -409,6 +458,7 @@ func Map2[T any](values []T, iter func(T, int) []string) string {
 
 	return strings.Join(result, " ")
 }
+
 func For[T any](from, to int, iter func(int) string) string {
 	var result []string
 	for i := from; i < to; i++ {
@@ -497,7 +547,7 @@ func PathValue(obj any, path string) (*reflect.Value, error) {
 			for current.Len() <= indexVal {
 				elemType := current.Type().Elem()
 
-				if elemType.Kind() == reflect.Ptr {
+				if elemType.Kind() == reflect.Pointer {
 					newElem := reflect.New(elemType.Elem())
 					current.Set(reflect.Append(current, newElem))
 				} else {
@@ -510,7 +560,7 @@ func PathValue(obj any, path string) (*reflect.Value, error) {
 
 			// fmt.Printf("current: %v\n", current)
 		} else {
-			if current.Kind() == reflect.Ptr {
+			if current.Kind() == reflect.Pointer {
 				current = current.Elem()
 			}
 

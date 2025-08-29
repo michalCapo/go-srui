@@ -62,7 +62,7 @@ func IRadio(name string, data ...any) *TInput {
 
 					Value:    c.value,
 					Type:     c.as,
-					Id:       c.target.Id,
+					ID:       c.target.ID,
 					Name:     c.name,
 					Required: c.required,
 					Disabled: c.disabled,
@@ -83,7 +83,7 @@ func IRadio(name string, data ...any) *TInput {
 						} else {
 							div.classList.add('invalid');
 						}
-					`, c.target.Id)),
+					`, c.target.ID)),
 				},
 			),
 
@@ -98,22 +98,23 @@ func IRadio(name string, data ...any) *TInput {
 }
 
 type ARadio struct {
-	error           validator.FieldError
-	data            any
-	name            string
-	class           string
-	size            string
-	onchange        string
-	placeholder     string
-	button_inactive string
-	button_active   string
-	button          string
-	target          Attr
-	options         []AOption
-	disabled        bool
-	required        bool
-	visible         bool
-	empty           bool
+	error          validator.FieldError
+	data           any
+	name           string
+	class          string
+	size           string
+	onchange       string
+	placeholder    string
+	buttonInactive string
+	buttonActive   string
+	button         string
+	target         Attr
+	options        []AOption
+	disabled       bool
+	required       bool
+	classLabel     string
+	visible        bool
+	empty          bool
 }
 
 func (c *ARadio) Error(errs *error) *ARadio {
@@ -144,6 +145,11 @@ func (c *ARadio) Placeholder(value string) *ARadio {
 
 func (c *ARadio) Class(value ...string) *ARadio {
 	c.class = strings.Join(value, " ")
+	return c
+}
+
+func (c *ARadio) ClassLabel(value ...string) *ARadio {
+	c.classLabel = strings.Join(value, " ")
 	return c
 }
 
@@ -190,7 +196,7 @@ func (c *ARadio) Options(options []AOption) *ARadio {
 func (c *ARadio) Render(text string) string {
 	value := ""
 
-	if c.data != nil {
+	if c.data != nil && c.data != "" {
 		// v := reflect.ValueOf(c.data)
 
 		// if v.Kind() == reflect.Ptr {
@@ -209,22 +215,23 @@ func (c *ARadio) Render(text string) string {
 	return Div(c.class)(
 		If(text != "", func() string {
 			return Label(&c.target).
+				Class(c.classLabel).
 				Required(c.required).
 				Render(text)
 		}),
 
 		Hidden(c.name, "radio", value, Attr{
-			Id:       c.target.Id,
+			ID:       c.target.ID,
 			OnChange: c.onchange,
 		}),
 
-		Div(Classes("grid grid-flow-col justify-stretch gap-2", If(c.error != nil, func() string { return "border-l-8 border-red-600" })))(
+		Div(Classes("w-full grid grid-flow-col justify-stretch gap-px", If(c.error != nil, func() string { return "border-l-8 border-red-600" })))(
 
 			Map(c.options, func(option *AOption, index int) string {
 				return Div(
-					Classes(c.size, c.button, If(c.disabled, func() string { return "opacity-50 pointer-events-none" }), Or(value == option.Id, func() string { return c.button_active }, func() string { return c.button_inactive })),
+					Classes(c.size, c.button, If(c.disabled, func() string { return "opacity-50 pointer-events-none" }), Or(value == option.ID, func() string { return c.buttonActive }, func() string { return c.buttonInactive })),
 					Attr{
-						Target: c.target.Id,
+						Target: c.target.ID,
 						OnClick: Trim(fmt.Sprintf(`
 							const buttons = document.querySelectorAll('[target=%s]');
 							buttons.forEach(button => button.classList.value = '%s');
@@ -238,7 +245,7 @@ func (c *ARadio) Render(text string) string {
 							el.value = '%s';
 							el.dispatchEvent(new Event('change'));
 
-						`, c.target.Id, Classes(c.size, c.button, c.button_inactive), Classes(c.size, c.button, c.button_active), c.target.Id, option.Id)),
+						`, c.target.ID, Classes(c.size, c.button, c.buttonInactive), Classes(c.size, c.button, c.buttonActive), c.target.ID, option.ID)),
 					},
 				)(option.Value)
 			}),
@@ -310,13 +317,14 @@ func IRadioButtons(name string, data ...any) *ARadio {
 	}
 
 	return &ARadio{
-		name:            name,
-		size:            MD,
-		target:          Target(),
-		visible:         true,
-		data:            temp,
-		button:          "border text-center rounded cursor-pointer",
-		button_active:   "bg-gray-600 text-white border-black",
-		button_inactive: "bg-white text-black hover:bg-gray-600 hover:text-white",
+		name:           name,
+		size:           MD,
+		target:         Target(),
+		visible:        true,
+		data:           temp,
+		classLabel:     "text-sm text-xs mt-3 font-bold relative",
+		button:         "border cursor-pointer flex items-center justify-center text-center",
+		buttonActive:   "bg-gray-600 text-white border-black",
+		buttonInactive: "bg-white text-black hover:bg-gray-600 hover:text-white",
 	}
 }

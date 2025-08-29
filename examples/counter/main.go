@@ -8,10 +8,10 @@ import (
 
 func main() {
 	app := ui.MakeApp("en")
-	app.Autoreload()
+	app.Autoreload(true)
 
 	page := func(ctx *ui.Context) string {
-		return app.Html("Test", "p-8 bg-gray-200",
+		return app.HTML("Test", "p-8 bg-gray-200",
 			ui.Div("flex flex-row gap-4")(
 				// another use of components rendefing using struct with method
 				Counter(3).Render(ctx),

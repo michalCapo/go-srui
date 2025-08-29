@@ -1,5 +1,7 @@
 package ui
 
+import "strings"
+
 type ALabel struct {
 	id         string
 	class      string
@@ -14,7 +16,7 @@ func Label(target *Attr) *ALabel {
 	}
 
 	if target != nil {
-		tmp.id = target.Id
+		tmp.id = target.ID
 	}
 
 	return tmp
@@ -31,12 +33,12 @@ func (c *ALabel) Disabled(value bool) *ALabel {
 }
 
 func (c *ALabel) Class(value ...string) *ALabel {
-	c.class = Classes(value...)
+	c.class = Classes(append(strings.Split(c.class, " "), value...)...)
 	return c
 }
 
 func (c *ALabel) ClassLabel(value ...string) *ALabel {
-	c.classLabel = Classes(value...)
+	c.classLabel = Classes(append(strings.Split(c.classLabel, " "), value...)...)
 	return c
 }
 

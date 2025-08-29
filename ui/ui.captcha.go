@@ -14,10 +14,10 @@ func Captcha(siteKey string, secured string) string {
 	captcha := Target()
 
 	return Div("")(
-		Div("flex items-center justify-center")(
-			Div("", captcha)(),
+		Div("relative flex items-center justify-center")(
+			Div("", captcha, Attr{Style: "min-height: 78px; min-width: 304px;"})(),
 			// Div("flex-1")(),
-			Div("pointer-events-none opacity-25 hidden", hidden)(secured),
+			Div("absolute inset-0 flex items-center justify-center opacity-0 pointer-events-none", hidden)(secured),
 		),
 
 		Div("text-xs border border-dashed border-black p-1 whitespace-wrap p-2 hidden", note)(
@@ -27,43 +27,43 @@ func Captcha(siteKey string, secured string) string {
 
 		Script(`
 			 setTimeout(function () {
-				const note = document.getElementById('`+note.Id+`');
+				const note = document.getElementById('`+note.ID+`');
+				const captcha = document.getElementById('`+captcha.ID+`');
+				const hidden = document.getElementById('`+hidden.ID+`');
 				const loaded = window.grecaptcha || null;
 
 				if (loaded == null) {
-					note.classList.remove('hidden');
+					setTimeout(function(){
+						if (!window.grecaptcha) {
+							note.classList.remove('hidden');
+						}
+					}, 1200);
 				} else {
 					loaded.ready(function () {
-						loaded.render('`+captcha.Id+`', {
+						loaded.render('`+captcha.ID+`', {
 							'sitekey': '`+siteKey+`',
 							'callback': function () {
-                                const captcha = document.getElementById('`+captcha.Id+`');
-                                const hidden = document.getElementById('`+hidden.Id+`');
-
-								captcha.classList.add('hidden');
-								hidden.classList.remove('hidden');
-								hidden.classList.remove('opacity-25');
-								hidden.classList.remove('pointer-events-none');
+								requestAnimationFrame(function(){
+									captcha.style.visibility = 'hidden';
+									hidden.classList.remove('opacity-0');
+									hidden.classList.remove('pointer-events-none');
+								});
 							},
 							'expired-callback': function () {
-                                const captcha = document.getElementById('`+captcha.Id+`');
-                                const hidden = document.getElementById('`+hidden.Id+`');
-
-								captcha.classList.remove('hidden');
-								hidden.classList.add('hidden');
-								hidden.classList.add('opacity-25');
-								hidden.classList.add('pointer-events-none');
-                                loaded.reset();
+								requestAnimationFrame(function(){
+									captcha.style.visibility = 'visible';
+									hidden.classList.add('opacity-0');
+									hidden.classList.add('pointer-events-none');
+									loaded.reset();
+								});
 							},
 							'error-callback': function () {
-                                const captcha = document.getElementById('`+captcha.Id+`');
-                                const hidden = document.getElementById('`+hidden.Id+`');
-
-								captcha.classList.remove('hidden');
-								hidden.classList.add('hidden');
-								hidden.classList.add('opacity-25');
-								hidden.classList.add('pointer-events-none');
-                                loaded.reset();
+								requestAnimationFrame(function(){
+									captcha.style.visibility = 'visible';
+									hidden.classList.add('opacity-0');
+									hidden.classList.add('pointer-events-none');
+									loaded.reset();
+								});
 							},
 						});
 					});
