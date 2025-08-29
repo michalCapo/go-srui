@@ -1,46 +1,10 @@
 package main
 
 import (
-    "fmt"
-    "time"
-
     "github.com/go-playground/validator/v10"
     "github.com/michalCapo/go-srui/ui"
+    "time"
 )
-
-// Demo counter component (inline for showcase)
-type TCounter struct {
-    Count int
-}
-
-func (c *TCounter) Increment(ctx *ui.Context) string {
-    _ = ctx.Body(c)
-    c.Count++
-    return c.Render(ctx)
-}
-
-func (c *TCounter) Decrement(ctx *ui.Context) string {
-    _ = ctx.Body(c)
-    if c.Count > 0 {
-        c.Count--
-    }
-    return c.Render(ctx)
-}
-
-func (c *TCounter) Render(ctx *ui.Context) string {
-    target := ui.Target()
-    return ui.Div("flex gap-2 items-center bg-purple-500 rounded text-white p-px", target)(
-        ui.Button().
-            Click(ctx.Call(c.Decrement, c).Replace(target)).
-            Class("rounded-l px-5").
-            Render("-"),
-        ui.Div("text-2xl")(fmt.Sprintf("%d", c.Count)),
-        ui.Button().
-            Click(ctx.Call(c.Increment, c).Replace(target)).
-            Class("rounded-r px-5").
-            Render("+"),
-    )
-}
 
 // Demo form showcasing inputs and validation
 type DemoForm struct {
@@ -67,12 +31,10 @@ func (f *DemoForm) Submit(ctx *ui.Context) string {
     if err := ctx.Body(f); err != nil {
         return f.Render(ctx, &err)
     }
-
     v := validator.New()
     if err := v.Struct(f); err != nil {
         return f.Render(ctx, &err)
     }
-
     ctx.Success("Form submitted successfully")
     return f.Render(ctx, nil)
 }
@@ -82,7 +44,6 @@ func (f *DemoForm) Render(ctx *ui.Context, err *error) string {
     genders := []ui.AOption{{ID: "male", Value: "Male"}, {ID: "female", Value: "Female"}, {ID: "other", Value: "Other"}}
 
     return ui.Div("grid gap-4 sm:gap-6 lg:grid-cols-2 items-start w-full", demoTarget)(
-        // Left: Form showcase
         ui.Form("flex flex-col gap-4 bg-white p-6 rounded-lg shadow w-full", demoTarget, ctx.Submit(f.Submit).Replace(demoTarget))(
             ui.Div("text-xl font-bold")("Component Showcase Form"),
             ui.ErrorForm(err, nil),
@@ -96,7 +57,6 @@ func (f *DemoForm) Render(ctx *ui.Context, err *error) string {
             ui.INumber("Price", f).Format("%.2f").Render("Price (USD)"),
             ui.IArea("Bio", f).Rows(4).Render("Short Bio"),
 
-            // Responsive gender selection: vertical radios on small screens, button group from sm+
             ui.Div("block sm:hidden")(
                 ui.Div("text-sm font-bold")("Gender"),
                 ui.IRadio("Gender", f).Value("male").Render("Male"),
@@ -119,7 +79,6 @@ func (f *DemoForm) Render(ctx *ui.Context, err *error) string {
             ),
         ),
 
-        // Right: Other components and interactions
         ui.Div("flex flex-col gap-4 w-full")(
             ui.Div("bg-white p-6 rounded-lg shadow flex flex-col gap-2 w-full")(
                 ui.Div("text-xl font-bold")("Buttons & Colors"),
@@ -141,7 +100,6 @@ func (f *DemoForm) Render(ctx *ui.Context, err *error) string {
             ui.Div("bg-white p-6 rounded-lg shadow flex flex-col gap-3 w-full")(
                 ui.Div("text-xl font-bold")("Simple Table"),
                 func() string {
-                    // Small screens: stacked cards
                     cards := ui.Div("space-y-2 sm:hidden")(
                         ui.Div("border rounded p-3 flex justify-between")(
                             ui.Div("")(
@@ -178,7 +136,6 @@ func (f *DemoForm) Render(ctx *ui.Context, err *error) string {
                         ),
                     )
 
-                    // Larger screens: table
                     t := ui.SimpleTable(3, "hidden sm:table w-full text-left border-collapse table-fixed text-sm whitespace-normal break-words")
                     t.Class(0, "font-bold")
                     t.Field("Name").Field("Country").Field("Age")
@@ -203,20 +160,11 @@ func (f *DemoForm) Render(ctx *ui.Context, err *error) string {
     )
 }
 
-func main() {
-    app := ui.MakeApp("en")
-    app.Autoreload(true)
-
-    page := func(ctx *ui.Context) string {
-        form := &DemoForm{}
-        return app.HTML("Go-SRUI Showcase", "p-4 sm:p-6 bg-gray-200 min-h-screen overflow-x-hidden",
-            ui.Div("max-w-full sm:max-w-6xl mx-auto flex flex-col gap-6 w-full")(
-                ui.Div("text-3xl font-bold")("Go-SRUI Component Showcase"),
-                form.Render(ctx, nil),
-            ),
-        )
-    }
-
-    app.Page("/", page)
-    app.Listen(":1422")
+func ShowcaseContent(ctx *ui.Context) string {
+    form := &DemoForm{}
+    return ui.Div("max-w-full sm:max-w-6xl mx-auto flex flex-col gap-6 w-full")(
+        ui.Div("text-3xl font-bold")("Go-SRUI Component Showcase"),
+        form.Render(ctx, nil),
+    )
 }
+
