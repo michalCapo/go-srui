@@ -41,11 +41,11 @@ func main() {
     app := ui.MakeApp("en")
     
     // Enable live reload for development
-    app.Autoreload()
+    app.Autoreload(true)
 
     // Define a page handler
     page := func(ctx *ui.Context) string {
-        return app.Html("My App", "p-8 bg-gray-200",
+        return app.HTML("My App", "p-8 bg-gray-200",
             ui.Div("flex flex-row gap-4")(
                 ui.Div("flex justify-start gap-4 items-center")(
                     "Hello, World!",
@@ -129,7 +129,7 @@ func (form *LoginForm) Login(ctx *ui.Context) string {
 Enable live reload during development:
 
 ```go
-app.Autoreload()
+app.Autoreload(true)
 ```
 
 ### Session Management
@@ -160,10 +160,10 @@ type User struct {
 
 ## Styling
 
-The framework integrates with Tailwind CSS by default. You can add custom styles through the `HtmlHead` method:
+The framework integrates with Tailwind CSS by default. You can add custom styles through the `HTMLHead` field:
 
 ```go
-app.HtmlHead = append(app.HtmlHead, `<link rel="stylesheet" href="custom.css">`)
+app.HTMLHead = append(app.HTMLHead, `<link rel="stylesheet" href="custom.css">`)
 ```
 
 ## Examples
@@ -334,11 +334,12 @@ import (
 
 func main() {
     app := ui.MakeApp("en")
-    app.Autoreload()
+    app.Autoreload(true)
 
     buttonId := ui.Target()
-    var show **ui.Callable
+    var show ui.Callable
 
+    // Primary button that toggles to the "hide" view
     button := func(ctx *ui.Context) string {
         return ui.Button(buttonId).
             Click(ctx.Call(show).Replace(buttonId)).
@@ -347,21 +348,20 @@ func main() {
             Render("Click me")
     }
 
-    hide := app.Callable(button)
-
     page := func(ctx *ui.Context) string {
-        show = ctx.Callable(func(ctx *ui.Context) string {
+        // Define the alternate state shown after clicking
+        show = func(ctx *ui.Context) string {
             return ui.Div("flex gap-2 items-center bg-red-500 rounded text-white p-px pl-4", buttonId)(
                 "Clicked",
                 ui.Button().
-                    Click(ctx.Call(hide).Replace(buttonId)).
+                    Click(ctx.Call(button).Replace(buttonId)).
                     Class("rounded").
                     Color(ui.Red).
                     Render("Hide me"),
             )
-        })
+        }
 
-        return app.Html("Test", "p-8 bg-gray-200",
+        return app.HTML("Test", "p-8 bg-gray-200",
             ui.Div("flex flex-row gap-4")(
                 ui.Div("flex justify-start gap-4 items-center")(
                     button(ctx),
