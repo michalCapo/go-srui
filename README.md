@@ -168,6 +168,31 @@ app.HTMLHead = append(app.HTMLHead, `<link rel="stylesheet" href="custom.css">`)
 
 ## Examples
 
+### Run Examples
+
+- `go run examples/hello/main.go`
+- `go run examples/button/main.go`
+- `go run examples/login/main.go`
+- `go run examples/counter/main.go`
+- `go run examples/showcase/main.go`
+
+### Showcase (All Components)
+
+A comprehensive demo that showcases inputs, buttons, tables, markdown, actions, and more:
+
+```bash
+go run examples/showcase/main.go
+```
+
+This example includes:
+- Form inputs (`IText`, `IEmail`, `IPhone`, `IPassword`, `INumber`, `IArea`, `IDate`, `ITime`, `IDateTime`)
+- Choices (`IRadioButtons`, `ISelect`, `ICheckbox`)
+- Buttons with colors (`ui.Blue`, `ui.Green`, `ui.Red`, `ui.Purple`, `ui.Yellow`, `ui.Gray`)
+- Actions with server callbacks (counter component)
+- `SimpleTable` rendering
+- `Markdown` rendering
+- `Captcha2` (client-side demo; add server-side validation in real usage)
+
 ### Counter Component
 
 A simple counter with increment and decrement buttons:
