@@ -170,19 +170,23 @@ app.HTMLHead = append(app.HTMLHead, `<link rel="stylesheet" href="custom.css">`)
 
 ### Run Examples
 
-- `go run examples/hello/main.go`
-- `go run examples/button/main.go`
-- `go run examples/login/main.go`
-- `go run examples/counter/main.go`
-- `go run examples/showcase/main.go`
+Single aggregated server with all examples:
+
+```bash
+go run ./examples/all
+```
+
+Available routes:
+- `/` (home)
+- `/hello`
+- `/button`
+- `/counter`
+- `/login`
+- `/showcase`
 
 ### Showcase (All Components)
 
-A comprehensive demo that showcases inputs, buttons, tables, markdown, actions, and more:
-
-```bash
-go run examples/showcase/main.go
-```
+A comprehensive demo is part of the aggregated server at `/showcase`.
 
 This example includes:
 - Form inputs (`IText`, `IEmail`, `IPhone`, `IPassword`, `INumber`, `IArea`, `IDate`, `ITime`, `IDateTime`)
