@@ -1,6 +1,7 @@
 package main
 
 import (
+    "github.com/michalCapo/go-srui/examples/pages"
     "github.com/michalCapo/go-srui/ui"
 )
 
@@ -59,12 +60,11 @@ func main() {
     }))
 
     // Individual example pages
-    app.Page("/hello", layout("Hello", HelloContent))
-    app.Page("/button", layout("Button", ButtonContent))
-    app.Page("/counter", layout("Counter", CounterContent))
-    app.Page("/login", layout("Login", LoginContent))
-    app.Page("/showcase", layout("Showcase", ShowcaseContent))
+    app.Page("/hello", layout("Hello", pages.HelloContent))
+    app.Page("/button", layout("Button", pages.ButtonContent))
+    app.Page("/counter", layout("Counter", pages.CounterContent))
+    app.Page("/login", layout("Login", pages.LoginContent))
+    app.Page("/showcase", layout("Showcase", pages.ShowcaseContent))
 
     app.Listen(":1422")
 }
-

@@ -1,4 +1,4 @@
-package main
+package pages
 
 import (
     "github.com/go-playground/validator/v10"
@@ -97,7 +97,7 @@ func (f *DemoForm) Render(ctx *ui.Context, err *error) string {
                 (&TCounter{Count: 2}).Render(ctx),
             ),
 
-            ui.Div("bg-white p-6 rounded-lg shadow flex flex-col gap-3 w-full")(
+            ui.Div("bg-white p-6 rounded-lg shadow flex flex col gap-3 w-full")(
                 ui.Div("text-xl font-bold")("Simple Table"),
                 func() string {
                     cards := ui.Div("space-y-2 sm:hidden")(

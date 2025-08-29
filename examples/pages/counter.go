@@ -1,8 +1,7 @@
-package main
+package pages
 
 import (
     "fmt"
-
     "github.com/michalCapo/go-srui/ui"
 )
 

@@ -1,8 +1,6 @@
-package main
+package pages
 
-import (
-    "github.com/michalCapo/go-srui/ui"
-)
+import "github.com/michalCapo/go-srui/ui"
 
 func ButtonContent(ctx *ui.Context) string {
     buttonId := ui.Target()

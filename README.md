@@ -173,8 +173,10 @@ app.HTMLHead = append(app.HTMLHead, `<link rel="stylesheet" href="custom.css">`)
 Single aggregated server with all examples:
 
 ```bash
-go run ./examples/all
+go run examples/main.go
 ```
+
+Then open http://localhost:1422. Use the top navigation menu to switch between pages.
 
 Available routes:
 - `/` (home)
