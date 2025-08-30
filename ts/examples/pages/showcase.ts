@@ -1,4 +1,4 @@
-import * as ui from '../../ui';
+import * as ui from '../../ui.index';
 
 class DemoForm {
   Name = '';
@@ -98,4 +98,3 @@ function render(ctx: ui.Context, f: DemoForm, err?: Error): string {
     ),
   );
 }
-

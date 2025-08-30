@@ -1,4 +1,4 @@
-import * as ui from '../../ui';
+import * as ui from '../../ui.index';
 
 export class TLoginForm { constructor(public Name = '', public Password = '') {} }
 
@@ -26,4 +26,3 @@ function render(ctx: ui.Context, form: TLoginForm, err?: Error): string {
     new ui.Button().Submit().Color(ui.Blue).Class('rounded').Render('Login'),
   );
 }
-

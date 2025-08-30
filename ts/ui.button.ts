@@ -1,6 +1,6 @@
-import { Attr } from '../core/types';
-import { BTN, Classes, DISABLED, MD } from '../core/util';
-import { A, Div } from '../core/elements';
+import { Attr } from './ui.types';
+import { BTN, Classes, DISABLED, MD } from './ui.util';
+import { A, Div } from './ui.elements';
 
 export class Button {
   private size = MD;
@@ -41,7 +41,7 @@ export class Button {
 
     // button element
     return `<button ${[...this.extra, { id: this.target.id, onclick: this.onclick, class: cls }]
-      .map(a => Object.entries(a).map(([k, v]) => v !== undefined && v !== false ? `${k}="${v === true ? k : v}"` : '').filter(Boolean).join(' ')).join(' ')}>${text}</button>`;
+      .map(a => Object.entries(a).map(([k, v]) => v !== undefined && v !== false ? `${k}=\"${v === true ? k : v}\"` : '').filter(Boolean).join(' ')).join(' ')}>${text}</button>`;
   }
 }
 

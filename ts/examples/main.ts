@@ -1,4 +1,4 @@
-import * as ui from '../ui';
+import * as ui from '../ui.index';
 import { HelloContent } from './pages/hello';
 import { ButtonContent } from './pages/button';
 import { CounterContent } from './pages/counter';

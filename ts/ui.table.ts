@@ -13,9 +13,9 @@ export class SimpleTable {
       const tag = i === 0 ? 'th' : 'td';
       return `<tr>${row.map((cell, j) => {
         const cls = i === 0 ? (this.headerClass[j] || '') : '';
-        return `<${tag} class="${cls} p-2 border-b">${cell}</${tag}>`;}).join('')}</tr>`;
+        return `<${tag} class=\"${cls} p-2 border-b\">${cell}</${tag}>`;}).join('')}</tr>`;
     }).join('');
-    return `<table class="${this.css}"><tbody>${rowsHtml}</tbody></table>`;
+    return `<table class=\"${this.css}\"><tbody>${rowsHtml}</tbody></table>`;
   }
 }
 

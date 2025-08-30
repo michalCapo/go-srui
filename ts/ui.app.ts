@@ -1,6 +1,6 @@
-import { __load, __post, __stringify, __submit, Context, Target } from './context';
-import { Classes, Trim } from './util';
-import { Callable } from './types';
+import { __load, __post, __stringify, __submit, Context, Target } from './ui.context';
+import { Classes, Trim } from './ui.util';
+import { Callable } from './ui.types';
 
 // Provide Node globals to satisfy TypeScript without @types/node
 declare var require: any;
@@ -18,19 +18,19 @@ export class App {
   constructor(defaultLanguage: string) {
     this.Language = defaultLanguage;
     this.HTMLHead = [
-      `<meta charset="UTF-8">`,
-      `<meta name="viewport" content="width=device-width, initial-scale=1.0">`,
+      `<meta charset=\"UTF-8\">`,
+      `<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">`,
       `<style>
         html { scroll-behavior: smooth; }
         .invalid, select:invalid, textarea:invalid, input:invalid {
           border-bottom-width: 2px; border-bottom-color: red; border-bottom-style: dashed;
         }
         @media (max-width: 768px) {
-          input[type="date"] { max-width: 100% !important; width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; overflow: hidden !important; }
-          input[type="date"]::-webkit-datetime-edit { max-width: 100% !important; overflow: hidden !important; }
+          input[type=\"date\"] { max-width: 100% !important; width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; overflow: hidden !important; }
+          input[type=\"date\"]::-webkit-datetime-edit { max-width: 100% !important; overflow: hidden !important; }
         }
       </style>`,
-      `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" integrity="sha512-wnea99uKIC3TJF7v4eKk4Y+lMz2Mklv18+r4na2Gn1abDRPPOeef95xTzdwGD9e6zXJBteMIhZ1+68QC5byJZw==" crossorigin="anonymous" referrerpolicy="no-referrer" />`,
+      `<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css\" integrity=\"sha512-wnea99uKIC3TJF7v4eKk4Y+lMz2Mklv18+r4na2Gn1abDRPPOeef95xTzdwGD9e6zXJBteMIhZ1+68QC5byJZw==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\" />`,
       script(__stringify, __post, __submit, __load),
     ];
     this.HTMLBody = (cls: string) => {
@@ -38,9 +38,9 @@ export class App {
       const contentId = Target().id!;
       return `
         <!DOCTYPE html>
-        <html lang="${this.Language}" class="${cls}">
+        <html lang=\"${this.Language}\" class=\"${cls}\">
           <head>__head__</head>
-          <body id="${contentId}" class="relative">__body__</body>
+          <body id=\"${contentId}\" class=\"relative\">__body__</body>
         </html>`;
     };
   }
@@ -121,3 +121,4 @@ export class App {
 export function MakeApp(defaultLanguage: string) { return new App(defaultLanguage); }
 
 function script(...parts: string[]) { return `<script>${parts.join(' ')}</script>`; }
+

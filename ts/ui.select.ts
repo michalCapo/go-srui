@@ -1,6 +1,6 @@
-import { Attr } from '../core/types';
-import { Classes, INPUT, MD } from '../core/util';
-import { Div, Label } from './shared';
+import { Attr } from './ui.types';
+import { Classes, INPUT, MD } from './ui.util';
+import { Div, Label } from './ui.shared';
 
 export interface OptionItem {
   id: string;
@@ -33,12 +33,12 @@ export class ISelect<T = any> {
 
   Render(label: string): string {
     const selected = this.data ? String((this.data as any)[this.name] ?? '') : '';
-    const opts = [this.placeholder ? `<option value="">${this.placeholder}</option>` : '']
-      .concat(this.options.map(o => `<option value="${o.id}" ${selected === o.id ? 'selected' : ''}>${o.value}</option>`))
+    const opts = [this.placeholder ? `<option value=\"\">${this.placeholder}</option>` : '']
+      .concat(this.options.map(o => `<option value=\"${o.id}\" ${selected === o.id ? 'selected' : ''}>${o.value}</option>`))
       .join('');
     return Div(this.css)(
       Label(this.cssLabel, { for: this.target.id, required: this.required })(label),
-      `<select class="${Classes(INPUT, this.size, this.cssInput)}" id="${this.target.id ?? ''}" name="${this.name}" ${this.required ? 'required' : ''} ${this.disabled ? 'disabled' : ''}>${opts}</select>`
+      `<select class=\"${Classes(INPUT, this.size, this.cssInput)}\" id=\"${this.target.id ?? ''}\" name=\"${this.name}\" ${this.required ? 'required' : ''} ${this.disabled ? 'disabled' : ''}>${opts}</select>`
     );
   }
 }

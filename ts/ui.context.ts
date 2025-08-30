@@ -1,14 +1,14 @@
-import { ActionType, Attr, BodyItem, Callable, Swap } from './types';
-import { Normalize, RandomString, Trim } from './util';
+import { ActionType, Attr, BodyItem, Callable, Swap } from './ui.types';
+import { Normalize, RandomString, Trim } from './ui.util';
 
 export class Context {
-  app: import('./app').App;
+  app: import('./ui.app').App;
   req: any;
   res: any;
   sessionID: string;
   append: string[] = [];
 
-  constructor(app: import('./app').App, req: any, res: any, sessionID: string) {
+  constructor(app: import('./ui.app').App, req: any, res: any, sessionID: string) {
     this.app = app;
     this.req = req;
     this.res = res;
@@ -51,9 +51,9 @@ export class Context {
     const values = body.length > 0 ? JSON.stringify(body) : '[]';
 
     if (as === 'FORM') {
-      return Normalize(`__submit(event, "${swap}", "${action.target?.id ?? ''}", "${path}", ${values}) `);
+      return Normalize(`__submit(event, \"${swap}\", \"${action.target?.id ?? ''}\", \"${path}\", ${values}) `);
     }
-    return Normalize(`__post(event, "${swap}", "${action.target?.id ?? ''}", "${path}", ${values}) `);
+    return Normalize(`__post(event, \"${swap}\", \"${action.target?.id ?? ''}\", \"${path}\", ${values}) `);
   }
 
   Send(method: Callable, ...values: any[]) {
@@ -83,7 +83,7 @@ export class Context {
     };
   }
 
-  Load(href: string): Attr { return { onclick: Normalize(`__load("${href}")`) }; }
+  Load(href: string): Attr { return { onclick: Normalize(`__load(\"${href}\")`) }; }
   Reload(): string { return Normalize('<script>window.location.reload();</script>'); }
   Redirect(href: string): string { return Normalize(`<script>window.location.href = '${href}';</script>`); }
 
@@ -93,10 +93,10 @@ export class Context {
 
 function displayMessage(ctx: Context, message: string, color: string) {
   ctx.append.push(
-    Trim(`<script>(function(){const el=document.getElementById("__messages__");if(el==null){const n=document.createElement("div");n.id="__messages__";n.classList="fixed top-0 right-0 p-2 z-40";document.body.appendChild(n);}})();</script>`),
+    Trim(`<script>(function(){const el=document.getElementById(\"__messages__\");if(el==null){const n=document.createElement(\"div\");n.id=\"__messages__\";n.classList=\"fixed top-0 right-0 p-2 z-40\";document.body.appendChild(n);}})();</script>`),
   );
   ctx.append.push(
-    Trim(`<script>(function(){const el=document.getElementById("__messages__");if(el!=null){const n=document.createElement("div");n.classList="p-4 m-2 rounded text-center border border-gray-700 shadow-xl text-xl text-center w-64 ${color}";n.innerHTML="${Normalize(message)}";el.appendChild(n);setTimeout(()=>el.removeChild(n),5000);}})();</script>`),
+    Trim(`<script>(function(){const el=document.getElementById(\"__messages__\");if(el!=null){const n=document.createElement(\"div\");n.classList=\"p-4 m-2 rounded text-center border border-gray-700 shadow-xl text-xl text-center w-64 ${color}\";n.innerHTML=\"${Normalize(message)}\";el.appendChild(n);setTimeout(()=>el.removeChild(n),5000);}})();</script>`),
   );
 }
 
@@ -155,13 +155,13 @@ export const __post = Trim(`
         event.preventDefault(); 
         let loader;
         let loading = setTimeout(() => {
-            loader = document.createElement("div");
-            loader.classList = "fixed inset-0 flex gap-4 items-center justify-center z-50 bg-white opacity-75 font-bold text-3xl";
-            loader.innerHTML = "Loading ...";
+            loader = document.createElement(\"div\");
+            loader.classList = \"fixed inset-0 flex gap-4 items-center justify-center z-50 bg-white opacity-75 font-bold text-3xl\";
+            loader.innerHTML = \"Loading ...\";
             document.body.appendChild(loader);
         }, 100);
 
-        fetch(path, {method: "POST", body: JSON.stringify(body)})
+        fetch(path, {method: \"POST\", body: JSON.stringify(body)})
             .then(html => html.text())
             .then(function (html) {
                 const parser = new DOMParser();
@@ -175,8 +175,8 @@ export const __post = Trim(`
 
                 const el = document.getElementById(target_id);
                 if (el != null) {
-                    if (swap === "inline") { el.innerHTML = html; }
-                    else if (swap === "outline") { el.outerHTML = html; }
+                    if (swap === \"inline\") { el.innerHTML = html; }
+                    else if (swap === \"outline\") { el.outerHTML = html; }
                 }
             })
             .finally(function() {
@@ -225,14 +225,14 @@ export const __submit = Trim(`
         event.preventDefault(); 
         const el = event.target;
         const tag = el.tagName.toLowerCase();
-        const form = tag === "form" ? el : el.closest("form");
-        const id = form.getAttribute("id");
+        const form = tag === \"form\" ? el : el.closest(\"form\");
+        const id = form.getAttribute(\"id\");
         let body = values; 
         let found = Array.from(document.querySelectorAll('[form=' + id + '][name]'));
         if (found.length === 0) { found = Array.from(form.querySelectorAll('[name]')); };
         found.forEach((item) => {
-            const name = item.getAttribute("name");
-            const type = item.getAttribute("type");
+            const name = item.getAttribute(\"name\");
+            const type = item.getAttribute(\"type\");
             let value = item.value;
             if (type === 'checkbox') { value = String(item.checked) }
             if(name != null) {
@@ -242,12 +242,12 @@ export const __submit = Trim(`
         });
         let loader;
         let loading = setTimeout(() => {
-            loader = document.createElement("div");
-            loader.classList = "fixed inset-0 flex gap-4 items-center justify-center z-50 bg-white opacity-75 font-bold text-3xl";
-            loader.innerHTML = "Loading ...";
+            loader = document.createElement(\"div\");
+            loader.classList = \"fixed inset-0 flex gap-4 items-center justify-center z-50 bg-white opacity-75 font-bold text-3xl\";
+            loader.innerHTML = \"Loading ...\";
             document.body.appendChild(loader);
         }, 100);
-        fetch(path, {method: "POST", body: JSON.stringify(body)})
+        fetch(path, {method: \"POST\", body: JSON.stringify(body)})
             .then(html => html.text())
             .then(function (html) {
                 const parser = new DOMParser();
@@ -260,8 +260,8 @@ export const __submit = Trim(`
                 }
                 const el = document.getElementById(target_id);
                 if (el != null) {
-                    if (swap === "inline") { el.innerHTML = html; }
-                    else if(swap === "outline") { el.outerHTML = html; }
+                    if (swap === \"inline\") { el.innerHTML = html; }
+                    else if(swap === \"outline\") { el.outerHTML = html; }
                 }
             })
             .finally(function() {
@@ -276,12 +276,12 @@ export const __load = Trim(`
         event.preventDefault(); 
         let loader;
         let loading = setTimeout(() => {
-            loader = document.createElement("div");
-            loader.classList = "fixed inset-0 flex gap-4 items-center justify-center z-50 bg-white opacity-75 font-bold text-3xl";
-            loader.innerHTML = "Loading ...";
+            loader = document.createElement(\"div\");
+            loader.classList = \"fixed inset-0 flex gap-4 items-center justify-center z-50 bg-white opacity-75 font-bold text-3xl\";
+            loader.innerHTML = \"Loading ...\";
             document.body.appendChild(loader);
         }, 100);
-        fetch(href, {method: "GET"})
+        fetch(href, {method: \"GET\"})
             .then(html => html.text())
             .then(function (html) {
                 const parser = new DOMParser();
@@ -302,3 +302,4 @@ export const __load = Trim(`
             });
     }
 `);
+

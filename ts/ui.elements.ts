@@ -1,5 +1,5 @@
-import { Attr } from './types';
-import { Classes } from './util';
+import { Attr } from './ui.types';
+import { Classes } from './ui.util';
 
 function attributes(...attrs: Attr[]): string {
   const result: string[] = [];

@@ -1,6 +1,6 @@
-import { Attr } from '../core/types';
-import { Classes, INPUT, MD } from '../core/util';
-import { Div, Label } from './shared';
+import { Attr } from './ui.types';
+import { Classes, INPUT, MD } from './ui.util';
+import { Div, Label } from './ui.shared';
 
 export interface AOption { id: string; value: string; }
 
@@ -23,9 +23,7 @@ export class IRadio {
     const selected = this.data ? String((this.data as any)[this.name] ?? '') : '';
     const checked = selected === this.valueSet ? 'checked' : '';
     return Div(this.css)(
-      `<label class="${this.cssLabel}">
-         <input class="${Classes(INPUT, this.size)}" type="radio" name="${this.name}" value="${this.valueSet}" ${checked}/> ${label}
-       </label>`
+      `<label class=\"${this.cssLabel}\">\n         <input class=\"${Classes(INPUT, this.size)}\" type=\"radio\" name=\"${this.name}\" value=\"${this.valueSet}\" ${checked}/> ${label}\n       </label>`
     );
   }
 }
@@ -38,7 +36,7 @@ export class IRadioButtons {
   Class(...v: string[]) { this.css = v.join(' '); return this; }
   Render(label: string): string {
     const selected = this.data ? String((this.data as any)[this.name] ?? '') : '';
-    const items = this.options.map(o => `<label class="px-3 py-2 border rounded ${selected === o.id ? 'bg-blue-700 text-white' : ''}"><input type="radio" name="${this.name}" value="${o.id}" ${selected === o.id ? 'checked' : ''}/> ${o.value}</label>`).join(' ');
+    const items = this.options.map(o => `<label class=\"px-3 py-2 border rounded ${selected === o.id ? 'bg-blue-700 text-white' : ''}\"><input type=\"radio\" name=\"${this.name}\" value=\"${o.id}\" ${selected === o.id ? 'checked' : ''}/> ${o.value}</label>`).join(' ');
     return Div(this.css)(Label('font-bold')(`${label}`), Div('flex gap-2 flex-wrap')(items));
   }
 }

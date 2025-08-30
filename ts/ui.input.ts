@@ -1,6 +1,6 @@
-import { Attr } from '../core/types';
-import { Classes, DISABLED, INPUT, MD, AREA } from '../core/util';
-import { Div, Input, Label, Textarea } from './shared';
+import { Attr } from './ui.types';
+import { Classes, DISABLED, INPUT, MD, AREA } from './ui.util';
+import { Div, Input, Label, Textarea } from './ui.shared';
 
 type ErrorLike = undefined | null;
 

@@ -40,7 +40,7 @@ export interface BodyItem {
   value: string;
 }
 
-export type Callable = (ctx: import('./context').Context) => string;
+export type Callable = (ctx: import('./ui.context').Context) => string;
 
 export interface CSSMut {
   orig: string;

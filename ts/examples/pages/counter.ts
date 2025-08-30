@@ -1,4 +1,4 @@
-import * as ui from '../../ui';
+import * as ui from '../../ui.index';
 
 export class TCounter { constructor(public Count: number) {} }
 
@@ -29,4 +29,3 @@ function renderCounter(ctx: ui.Context, counter: TCounter): string {
     new ui.Button().Click(ctx.Call(increment, counter).Replace(target)).Class('rounded-r px-5').Render('+'),
   );
 }
-

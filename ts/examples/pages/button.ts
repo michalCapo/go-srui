@@ -1,4 +1,4 @@
-import * as ui from '../../ui';
+import * as ui from '../../ui.index';
 
 export function ButtonContent(ctx: ui.Context): string {
   const buttonId = ui.Target();
@@ -23,4 +23,3 @@ export function ButtonContent(ctx: ui.Context): string {
     ui.Div('flex justify-start gap-4 items-center')(button(ctx)),
   );
 }
-

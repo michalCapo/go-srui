@@ -3,13 +3,13 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "build": "tsc -p ts/tsconfig.json",
-        "start": "node dist/examples/main.js",
-        "dev": "ts-node ts/examples/main.ts"
+        "dev": "tsx ts/examples/main.ts"
     },
     "devDependencies": {
-        "@types/node": "^22.5.0",
-        "ts-node": "^10.9.2",
-        "typescript": "^5.4.0"
+        "@types/node": "^22.18.0",
+        "typescript": "^5.9.2"
+    },
+    "dependencies": {
+        "tsx": "^4.20.5"
     }
 }
