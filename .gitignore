@@ -4,3 +4,4 @@ docs/.~*
 
 tmp/
 node_modules/
+__debug*
